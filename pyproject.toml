@@ -18,14 +18,14 @@ isort = "^5.10.1"
 pyright = "^1.1.269"
 
 [tool.black]
-line-length = 120
+line-length = 100
 target-version = ['py38']
 include = '\.pyi?$'
 
 [tool.isort]
 profile = "hug"
-line_length = 120
-src_paths = ["tests", "pokemon_ai"]
+line_length = 100
+src_paths = ["pokemon_ai"]
 
 [tool.pyright]
 exclude = [".venv", "dist", "build"]
