@@ -1,0 +1,35 @@
+[tool.poetry]
+name = "pokemon_ai"
+version = "0.1.0"
+description = "[wip] Deep Q Network Pokemon AI"
+authors = ["Kay Gosho <ketsume0211@gmail.com>"]
+license = "MIT"
+packages = [
+  { include = "pokemon_ai" },
+]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+
+[tool.poetry.dev-dependencies]
+pytest = "^7.1.2"
+black = "^22.8.0"
+isort = "^5.10.1"
+pyright = "^1.1.269"
+
+[tool.black]
+line-length = 120
+target-version = ['py38']
+include = '\.pyi?$'
+
+[tool.isort]
+profile = "hug"
+line_length = 120
+src_paths = ["tests", "pokemon_ai"]
+
+[tool.pyright]
+exclude = [".venv", "dist", "build"]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
