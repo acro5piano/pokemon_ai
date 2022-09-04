@@ -6,7 +6,7 @@ from typing import Optional
 from pokemon_ai.logger import log
 from pokemon_ai.simulator.damage import calculate_damage
 from pokemon_ai.simulator.moves import Move
-from pokemon_ai.simulator.player import ActionChangeTo, ActionSelectMove, Player
+from pokemon_ai.simulator.player import Action, ActionChangeTo, ActionSelectMove, Player
 from pokemon_ai.simulator.pokedex import Pokemon
 
 
@@ -19,19 +19,19 @@ class Battle:
         self.player1 = player1
         self.player2 = player2
 
-    def forward_step(self):
+    def forward_step(self) -> tuple[Optional[Action], Optional[Action]]:
         self.turn += 1
 
         if self.player1.get_active_pokemon().actual_hp <= 0:
             action = self.player1.choose_action_on_pokemon_dead(self.player2)
             self.player1.change_pokemon_index_to(action.change_to)
             log(f"{self.player1} changed to {action.change_to}")
-            return
+            return action, None
         if self.player2.get_active_pokemon().actual_hp <= 0:
             action = self.player2.choose_action_on_pokemon_dead(self.player1)
             self.player2.change_pokemon_index_to(action.change_to)
             log(f"{self.player2} changed to {action.change_to}")
-            return
+            return None, action
 
         action1 = self.player1.choose_action(self.player2)
         action2 = self.player2.choose_action(self.player1)
@@ -82,6 +82,8 @@ class Battle:
                 active_pokemon1.actual_hp -= damage
                 log(f"{active_pokemon1} got {damage}")
 
+        return action1, action2
+
     def get_winner(self) -> Optional[Player]:
         if self.player1.is_dead():
             return self.player2
@@ -109,6 +111,9 @@ class Battle:
             if self.turn > 500:
                 raise Exception("Battle is too long")
             log(self)
+
+    def to_array(self):
+        return [*self.player1.to_array(), *self.player2.to_array()]
 
 
 PokemonMove = tuple[Pokemon, Move]

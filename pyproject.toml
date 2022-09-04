@@ -4,9 +4,6 @@ version = "0.1.0"
 description = "[wip] Deep Q Network Pokemon AI"
 authors = ["Kay Gosho <ketsume0211@gmail.com>"]
 license = "MIT"
-packages = [
-  { include = "pokemon_ai" },
-]
 
 [tool.poetry.dependencies]
 python = ">=3.10,<3.11"

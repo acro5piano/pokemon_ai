@@ -50,3 +50,6 @@ class Player:
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.pokemons} active:{self.active_pokemon_index})"
+
+    def to_array(self):
+        return [p.to_array() for p in self.pokemons]

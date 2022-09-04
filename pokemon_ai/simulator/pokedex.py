@@ -33,6 +33,13 @@ class Pokemon:
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.actual_hp})"
 
+    def to_array(self):
+        return [
+            self.__class__.__name__,
+            self.actual_hp,
+            *[m.__class__.__name__ for m in self.actual_moves],
+        ]
+
 
 class Rhydon(Pokemon):
     types = [t.Ground(), t.Rock()]

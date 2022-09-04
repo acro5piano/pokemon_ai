@@ -1,5 +1,9 @@
+from pokemon_ai.dqn.value_function_agent import Trainer
+
+
 def main():
-    print("Hello World!")
+    trainer = Trainer()
+    trainer.train()
 
 
 if __name__ == "__main__":
