@@ -11,5 +11,5 @@ poetry install
 # Run Unit Testing
 
 ```
-poetry run pytest
+poetry run python -m pytest tests/simulator/
 ```
