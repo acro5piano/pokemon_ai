@@ -2,6 +2,7 @@ import pokemon_ai.simulator.typechart as t
 
 
 class Move:
+    id: int
     bp: int  # base power
     acc: int  # accuracy
     pp: int  # power points
@@ -12,6 +13,7 @@ class Move:
 
 
 class Earthquake(Move):
+    id = 1
     bp = 100
     acc = 100
     pp = 16
@@ -19,6 +21,7 @@ class Earthquake(Move):
 
 
 class Surf(Move):
+    id = 2
     bp = 95
     acc = 100
     pp = 24
@@ -26,6 +29,7 @@ class Surf(Move):
 
 
 class Thunderbolt(Move):
+    id = 3
     bp = 95
     acc = 100
     pp = 24

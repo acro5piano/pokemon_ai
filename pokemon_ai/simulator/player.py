@@ -11,10 +11,16 @@ from pokemon_ai.simulator.pokedex import Pokemon
 class ActionChangeTo:
     change_to: Pokemon
 
+    def to_array(self):
+        return [0, self.change_to.id]
+
 
 @dataclass
 class ActionSelectMove:
     move: Move
+
+    def to_array(self):
+        return [0, self.move.id]
 
 
 Action = Union[ActionChangeTo, ActionSelectMove]

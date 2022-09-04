@@ -6,6 +6,7 @@ from pokemon_ai.simulator.constant import LEVEL, MAX_DETERMINANT_VALUE
 
 
 class Pokemon:
+    id: int
     types: list[t.Type]
     hp: int
     atk: int
@@ -35,13 +36,14 @@ class Pokemon:
 
     def to_array(self):
         return [
-            self.__class__.__name__,
+            self.id,
             self.actual_hp,
-            *[m.__class__.__name__ for m in self.actual_moves],
+            *[m.id for m in self.actual_moves],
         ]
 
 
 class Rhydon(Pokemon):
+    id = 112
     types = [t.Ground(), t.Rock()]
     hp = 105
     atk = 130
@@ -53,6 +55,7 @@ class Rhydon(Pokemon):
 
 
 class Starmie(Pokemon):
+    id = 121
     types = [t.Water(), t.Psychic()]
     hp = 60
     atk = 75
@@ -64,6 +67,7 @@ class Starmie(Pokemon):
 
 
 class Jolteon(Pokemon):
+    id = 135
     types = [t.Electric()]
     hp = 65
     atk = 65

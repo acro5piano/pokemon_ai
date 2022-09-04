@@ -17,15 +17,17 @@ EPSILON = 0.2
 GAMMA = 0.9
 
 
+# TODO: use dataclass
 Experience = namedtuple("Experience", ["state", "action", "reward", "next_state", "done"])
 
 
 class NeuralNetworkPlayer(Player):
     model: Pipeline
 
-    def __init__(self, model: Pipeline):
+    def __init__(self, model: Pipeline, step: int):
         self.model = model
         self.pokemons = build_random_team()
+        self.step = step
         # TODO: create a team from neural network. How to do it???
         # if random() < EPSILON:
         #     self.pokemons = build_random_team()
@@ -36,7 +38,7 @@ class NeuralNetworkPlayer(Player):
         available_pokemons = self.get_available_pokemons_for_change()
         if len(available_pokemons) == 0:
             return ActionSelectMove(self.get_active_pokemon().actual_moves[0])
-        if random() < EPSILON:
+        if self.step == 0 or random() < EPSILON:
             if random() < 0.5:
                 return ActionSelectMove(self.get_active_pokemon().actual_moves[0])
             else:
@@ -55,7 +57,7 @@ class ValueFunctionAgent:
     learner: Player
     opponent: Player
 
-    def __init__(self):
+    def __init__(self, step: int):
         self.model = Pipeline(
             [
                 ("scaler", StandardScaler()),
@@ -68,22 +70,32 @@ class ValueFunctionAgent:
                 ),
             ]
         )
+        self.step = step
+        fake_state = np.array([[0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0]])
+        fake_estimation = np.array([[0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0]])
+        self.model.named_steps["scaler"].fit(fake_state)
+        self.model.fit(fake_state, fake_estimation)
 
     def reset(self):
-        self.learner = NeuralNetworkPlayer(self.model)
+        self.learner = NeuralNetworkPlayer(self.model, self.step)
         self.opponent = StupidRandomPlayer(build_random_team())
 
     def update(self, experiences: deque[Experience]):
         states = np.vstack([e.state for e in experiences])
         next_states = np.vstack([e.next_state for e in experiences])
-        future = self.model.predict(next_states)
+
         y = self.model.predict(states)
+        future = self.model.predict(next_states)
 
         for i, experience in enumerate(experiences):
             reward = experience.reward
             if not experience.done:
                 reward += GAMMA * np.max(future[i])
-            y[i, experience.action] = reward
+            print(y)
+            print(experience.action)
+            # action[0] = action type,
+            # action[1] = action content,
+            y[i][experience.action[0]][experience.action[1]] = reward
 
         X = self.model.named_steps("scaler").transform(states)
         self.model.named_steps("mlp").partial_fit(X, y)
@@ -99,9 +111,11 @@ def build_random_team() -> list[p.Pokemon]:
 
 
 class Trainer:
+    step = 0
+    experiences = deque(maxlen=1024)
+
     def __init__(self):
-        self.agent = ValueFunctionAgent()
-        self.experiences = deque(maxlen=1024)
+        self.agent = ValueFunctionAgent(self.step)
 
     def train(self):
         self.agent.reset()
@@ -124,15 +138,23 @@ class Trainer:
                 self.experiences.append(
                     Experience(
                         state=current_state,
-                        action=action,
+                        action=action.to_array(),
                         reward=reward,
                         next_state=battle.to_array(),
                         done=winner is not None,
                     )
                 )
+
+                # This is required to fit before predicting.
+                if self.step == 0:
+                    states = np.vstack([e.state for e in self.experiences])
+                    self.agent.model.named_steps["scaler"].fit(states)
+                    self.agent.update(self.experiences)
+            self.step += 1
+            log(battle)
             if winner is not None:
                 break
             if battle.turn > 500:
                 log("battle is too long")
                 break
-            log(battle)
+        self.agent.update(self.experiences)
