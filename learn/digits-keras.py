@@ -33,7 +33,7 @@ model = tf.keras.Sequential(
     ]
 )
 model.compile(optimizer="sgd", loss="categorical_crossentropy")
-model.fit(X_train, y_train, epochs=8)
+model.fit(X_train, y_train, epochs=500)
 
 y_true = np.argmax(y_test, axis=1)
 y_pred = np.argmax(model.predict(X_test), axis=1)

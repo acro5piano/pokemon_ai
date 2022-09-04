@@ -20,17 +20,17 @@ class ActionSelectMove:
 Action = Union[ActionChangeTo, ActionSelectMove]
 
 
-class Agent:
+class Player:
     pokemons: list[Pokemon]
     active_pokemon_index = 0
 
     def __init__(self, pokemons: list[Pokemon]):
         self.pokemons = pokemons
 
-    def choose_action(self, _opponent: Agent) -> Action:
+    def choose_action(self, _opponent: Player) -> Action:
         raise NotImplementedError
 
-    def choose_action_on_pokemon_dead(self, _opponent: Agent) -> ActionChangeTo:
+    def choose_action_on_pokemon_dead(self, _opponent: Player) -> ActionChangeTo:
         raise NotImplementedError
 
     def change_pokemon_index_to(self, pokemon: Pokemon):

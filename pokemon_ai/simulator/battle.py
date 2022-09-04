@@ -4,56 +4,56 @@ from random import random
 from typing import Optional
 
 from pokemon_ai.logger import log
-from pokemon_ai.simulator.agent import ActionChangeTo, ActionSelectMove, Agent
 from pokemon_ai.simulator.damage import calculate_damage
 from pokemon_ai.simulator.moves import Move
+from pokemon_ai.simulator.player import ActionChangeTo, ActionSelectMove, Player
 from pokemon_ai.simulator.pokedex import Pokemon
 
 
 class Battle:
-    agent1: Agent
-    agent2: Agent
+    player1: Player
+    player2: Player
     turn = 0
 
-    def __init__(self, agent1: Agent, agent2: Agent):
-        self.agent1 = agent1
-        self.agent2 = agent2
+    def __init__(self, player1: Player, player2: Player):
+        self.player1 = player1
+        self.player2 = player2
 
     def forward_step(self):
         self.turn += 1
 
-        if self.agent1.get_active_pokemon().actual_hp <= 0:
-            action = self.agent1.choose_action_on_pokemon_dead(self.agent2)
-            self.agent1.change_pokemon_index_to(action.change_to)
-            log(f"{self.agent1} changed to {action.change_to}")
+        if self.player1.get_active_pokemon().actual_hp <= 0:
+            action = self.player1.choose_action_on_pokemon_dead(self.player2)
+            self.player1.change_pokemon_index_to(action.change_to)
+            log(f"{self.player1} changed to {action.change_to}")
             return
-        if self.agent2.get_active_pokemon().actual_hp <= 0:
-            action = self.agent2.choose_action_on_pokemon_dead(self.agent1)
-            self.agent2.change_pokemon_index_to(action.change_to)
-            log(f"{self.agent2} changed to {action.change_to}")
+        if self.player2.get_active_pokemon().actual_hp <= 0:
+            action = self.player2.choose_action_on_pokemon_dead(self.player1)
+            self.player2.change_pokemon_index_to(action.change_to)
+            log(f"{self.player2} changed to {action.change_to}")
             return
 
-        action1 = self.agent1.choose_action(self.agent2)
-        action2 = self.agent2.choose_action(self.agent1)
+        action1 = self.player1.choose_action(self.player2)
+        action2 = self.player2.choose_action(self.player1)
 
         # Handle pokemon change
         if isinstance(action1, ActionChangeTo):
-            if action1.change_to not in self.agent1.get_available_pokemons_for_change():
+            if action1.change_to not in self.player1.get_available_pokemons_for_change():
                 raise Exception(
-                    f"{self.agent1} tried to change to {action1.change_to} but it's not available"
+                    f"{self.player1} tried to change to {action1.change_to} but it's not available"
                 )
-            self.agent1.change_pokemon_index_to(action1.change_to)
-            log(f"{self.agent1} changed to {action1.change_to}")
+            self.player1.change_pokemon_index_to(action1.change_to)
+            log(f"{self.player1} changed to {action1.change_to}")
         if isinstance(action2, ActionChangeTo):
-            if action2.change_to not in self.agent2.get_available_pokemons_for_change():
+            if action2.change_to not in self.player2.get_available_pokemons_for_change():
                 raise Exception(
-                    f"{self.agent2} tried to change to {action2.change_to} but it's not available"
+                    f"{self.player2} tried to change to {action2.change_to} but it's not available"
                 )
-            self.agent2.change_pokemon_index_to(action2.change_to)
-            log(f"{self.agent2} changed to {action2.change_to}")
+            self.player2.change_pokemon_index_to(action2.change_to)
+            log(f"{self.player2} changed to {action2.change_to}")
 
-        active_pokemon1 = self.agent1.get_active_pokemon()
-        active_pokemon2 = self.agent2.get_active_pokemon()
+        active_pokemon1 = self.player1.get_active_pokemon()
+        active_pokemon2 = self.player2.get_active_pokemon()
 
         # Handle pokemon damage
         if isinstance(action1, ActionSelectMove) and isinstance(action2, ActionSelectMove):
@@ -82,21 +82,21 @@ class Battle:
                 active_pokemon1.actual_hp -= damage
                 log(f"{active_pokemon1} got {damage}")
 
-    def get_winner(self) -> Optional[Agent]:
-        if self.agent1.is_dead():
-            return self.agent2
-        if self.agent2.is_dead():
-            return self.agent1
+    def get_winner(self) -> Optional[Player]:
+        if self.player1.is_dead():
+            return self.player2
+        if self.player2.is_dead():
+            return self.player1
 
     def __repr__(self) -> str:
-        return f"Battle({self.agent1}, {self.agent2})"
+        return f"Battle({self.player1}, {self.player2})"
 
     def validate(self):
-        for agent in (self.agent1, self.agent2):
-            if len([p for p in agent.pokemons if len(p.actual_moves) == 0]) > 0:
+        for Player in (self.player1, self.player2):
+            if len([p for p in Player.pokemons if len(p.actual_moves) == 0]) > 0:
                 raise ValueError("Pokemon must have at least one move")
 
-    def run(self) -> Agent:
+    def run(self) -> Player:
         log(self)
         self.validate()
         while True:
