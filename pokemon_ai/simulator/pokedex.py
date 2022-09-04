@@ -28,8 +28,6 @@ class Pokemon:
             + LEVEL
             + 10
         )
-        if len(moves) == 0:
-            raise ValueError("Pokemon must have at least one move")
         self.actual_moves = moves
 
     def __repr__(self) -> str:

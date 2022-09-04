@@ -13,6 +13,6 @@ def test_to_real_value():
 def test_calculate_damage():
     seed(42)
     assert calculate_damage(Rhydon(), Starmie(), Earthquake()) == 146
-    assert calculate_damage(Rhydon(), Jolteon(), Earthquake()) == 379
+    assert calculate_damage(Rhydon(), Jolteon(), Earthquake()) == 333  # Max HP
     assert calculate_damage(Jolteon(), Rhydon(), Thunderbolt()) == 0
     assert calculate_damage(Jolteon(), Starmie(), Thunderbolt()) == 256

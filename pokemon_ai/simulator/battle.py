@@ -91,8 +91,14 @@ class Battle:
     def __repr__(self) -> str:
         return f"Battle({self.agent1}, {self.agent2})"
 
+    def validate(self):
+        for agent in (self.agent1, self.agent2):
+            if len([p for p in agent.pokemons if len(p.actual_moves) == 0]) > 0:
+                raise ValueError("Pokemon must have at least one move")
+
     def run(self) -> Agent:
         log(self)
+        self.validate()
         while True:
             log("")
             self.forward_step()
