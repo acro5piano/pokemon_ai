@@ -7,6 +7,9 @@ class Move:
     pp: int  # power points
     type: t.Type  # type
 
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}"
+
 
 class Earthquake(Move):
     bp = 100

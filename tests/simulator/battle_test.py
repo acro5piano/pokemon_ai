@@ -1,32 +1,44 @@
 from random import seed
 
+import pytest
+
 import pokemon_ai.simulator.moves as m
 import pokemon_ai.simulator.pokedex as p
-from pokemon_ai.simulator.battle import ActionChangeTo, ActionSelectMove, Agent, Battle
+from pokemon_ai.simulator.battle import Battle
+from pokemon_ai.simulator.sample_agents import JustAttackAgent, JustChangeAgent
 
 
-class JustAttackAgent(Agent):
-    def choose_action(self, opponent: Agent):
-        player_pokemon = self.get_active_pokemon()
-        return ActionSelectMove(player_pokemon.actual_moves[0])
-
-    def choose_action_on_pokemon_dead(self, opponent: Agent):
-        return self.get_available_pokemons()[0]
-
-
-def test_battle():
+def test_battle_just_battle():
     seed(42)
     agent1 = JustAttackAgent([p.Jolteon([m.Thunderbolt()])])
     agent2 = JustAttackAgent([p.Starmie([m.Surf()])])
     battle = Battle(agent1, agent2)
-
-    while True:
-        print(battle)
-        battle.forward_step()
-        winner = battle.get_winner()
-        if winner is not None:
-            print(winner)
-            break
-
+    winner = battle.run()
     assert winner == agent1
-    raise NotImplementedError
+
+
+def test_battle_just_battle_2():
+    seed(42)
+    agent1 = JustAttackAgent([p.Rhydon([m.Earthquake()])])
+    agent2 = JustAttackAgent([p.Starmie([m.Surf()])])
+    battle = Battle(agent1, agent2)
+    winner = battle.run()
+    assert winner == agent2
+
+
+def test_battle_just_change():
+    seed(42)
+    agent1 = JustChangeAgent([p.Rhydon([m.Earthquake()]), p.Jolteon([m.Thunderbolt()])])
+    agent2 = JustChangeAgent([p.Starmie([m.Earthquake()]), p.Jolteon([m.Thunderbolt()])])
+    battle = Battle(agent1, agent2)
+    with pytest.raises(Exception):
+        battle.run()
+
+
+def test_battle_just_battle_and_change():
+    seed(42)
+    agent1 = JustChangeAgent([p.Rhydon([m.Earthquake()]), p.Jolteon([m.Thunderbolt()])])
+    agent2 = JustAttackAgent([p.Starmie([m.Surf()]), p.Jolteon([m.Thunderbolt()])])
+    battle = Battle(agent1, agent2)
+    winner = battle.run()
+    assert winner == agent2
