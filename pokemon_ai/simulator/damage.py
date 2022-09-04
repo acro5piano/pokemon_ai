@@ -48,7 +48,10 @@ def calculate_damage(attacker: Pokemon, defender: Pokemon, move: Move) -> int:
 
     modifier *= randint(217, 255) / 255
 
-    # TODO: status changes
+    # TODO:
+    # - status changes (amnesia, screech, etc.)
+    # - 1/256 miss
+    # - reflect/light screen
 
     real_atk = to_real_value(attacker.atk if move.type.is_physical else attacker.spa)
     real_def = to_real_value(defender.def_ if move.type.is_physical else defender.spd)
