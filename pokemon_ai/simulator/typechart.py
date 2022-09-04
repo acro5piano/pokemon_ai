@@ -1,3 +1,7 @@
+# TODO: use class instead of str
+from __future__ import annotations
+
+
 class Type:
     is_physical: bool
     weak_to: list[str] = []

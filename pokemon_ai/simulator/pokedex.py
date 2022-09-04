@@ -1,5 +1,6 @@
 from math import floor
 
+import pokemon_ai.simulator.moves as m
 import pokemon_ai.simulator.typechart as t
 from pokemon_ai.simulator.constant import LEVEL, MAX_DETERMINANT_VALUE
 
@@ -12,9 +13,12 @@ class Pokemon:
     spa: int
     spd: int
     spe: int
-    actual_hp: int
+    available_moves: list[m.Move]
 
-    def __init__(self):
+    actual_hp: int
+    actual_moves: list[m.Move]
+
+    def __init__(self, moves: list[m.Move] = []):
         self.actual_hp = (
             floor(
                 ((self.hp + MAX_DETERMINANT_VALUE) * 2 + min(63, floor(floor(1 + 65535) / 4)))
@@ -24,6 +28,12 @@ class Pokemon:
             + LEVEL
             + 10
         )
+        if len(moves) == 0:
+            raise ValueError("Pokemon must have at least one move")
+        self.actual_moves = moves
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}({self.actual_hp})"
 
 
 class Rhydon(Pokemon):
@@ -34,6 +44,7 @@ class Rhydon(Pokemon):
     spa = 45
     spd = 45
     spe = 40
+    available_moves = [m.Earthquake()]
 
 
 class Starmie(Pokemon):
@@ -44,6 +55,7 @@ class Starmie(Pokemon):
     spa = 100
     spd = 100
     spe = 115
+    available_moves = [m.Surf()]
 
 
 class Jolteon(Pokemon):
@@ -54,3 +66,4 @@ class Jolteon(Pokemon):
     spa = 110
     spd = 110
     spe = 130
+    available_moves = [m.Thunderbolt()]
