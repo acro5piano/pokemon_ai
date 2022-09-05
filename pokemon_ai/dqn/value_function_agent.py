@@ -4,14 +4,16 @@ from random import random, sample
 
 import numpy as np
 from sklearn.neural_network import MLPRegressor
-from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import StandardScaler
 
 import pokemon_ai.simulator.moves as m
 import pokemon_ai.simulator.pokedex as p
 from pokemon_ai.logger import log
 from pokemon_ai.simulator.battle_simplified import Battle
 from pokemon_ai.simulator.player import Action, Player
+
+# from sklearn.pipeline import Pipeline
+# from sklearn.preprocessing import StandardScaler
+
 
 EPSILON = 0.2
 GAMMA = 0.9
@@ -44,10 +46,12 @@ class StupidRandomPlayer(Player):
 class NeuralNetworkPlayer(Player):
     model: MLPRegressor
 
-    def __init__(self, model: MLPRegressor, step: int):
+    def __init__(
+        self,
+        model: MLPRegressor,
+    ):
         self.model = model
         self.pokemons = build_random_team()
-        self.step = step
         # TODO: create a team from neural network. How to do it???
         # Maybe we can calculate team's win rate and use it as learning data
 
@@ -60,14 +64,13 @@ class NeuralNetworkPlayer(Player):
         available_pokemons = self.get_available_pokemons_for_change()
         if len(available_pokemons) == 0:
             return Action.FIGHT
-        if self.step == 0 or random() < EPSILON:
+        if random() < EPSILON:
             if random() < 0.5:
                 return Action.FIGHT
             else:
                 return Action.CHANGE
-        action = self.model.predict([*self.to_array(), *opponent.to_array()])
-        print(action)
-        return action
+        action = self.model.predict([[*self.to_array(), *opponent.to_array()]])
+        return Action(action[0].argmax())
 
     def choose_action_on_pokemon_dead(self, opponent: Player) -> Action:
         return Action.CHANGE
@@ -80,7 +83,9 @@ class ValueFunctionAgent:
     learner: Player
     opponent: Player
 
-    def __init__(self, step: int):
+    def __init__(
+        self,
+    ):
         # self.model = Pipeline(
         #     [
         #         (
@@ -96,16 +101,15 @@ class ValueFunctionAgent:
             hidden_layer_sizes=(10, 10),
             max_iter=10000,
         )
-        self.step = step
         fake_state = np.array([[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]])
         fake_estimation = np.array([[0, 0]])
         self.model.partial_fit(fake_state, fake_estimation)
 
     def reset(self):
-        self.learner = NeuralNetworkPlayer(self.model, self.step)
+        self.learner = NeuralNetworkPlayer(self.model)
         self.opponent = StupidRandomPlayer(build_random_team())
 
-    def update(self, experiences: deque[Experience]):
+    def update(self, experiences: list[Experience]):
         states = np.array([e.state for e in experiences])
         next_states = np.array([e.next_state for e in experiences])
 
@@ -137,7 +141,7 @@ class Trainer:
     experiences = deque(maxlen=1024)
 
     def __init__(self, episodes: int):
-        self.agent = ValueFunctionAgent(self.step)
+        self.agent = ValueFunctionAgent()
         self.episodes = episodes
 
     def train(self):
@@ -170,11 +174,6 @@ class Trainer:
                             done=winner is not None,
                         )
                     )
-                    # # This is required to fit before predicting.
-                    # if self.step == 0:
-                    #     states = np.vstack([e.state for e in self.experiences])
-                    #     self.agent.model.named_steps["scaler"].fit(states)
-                    #     self.agent.update(self.experiences)
                 self.step += 1
                 log(battle)
                 if winner is not None:
@@ -182,5 +181,5 @@ class Trainer:
                 if battle.turn > 500:
                     log("battle is too long")
                     break
-            self.agent.update(self.experiences)
+            self.agent.update(sample(self.experiences, 32))
         print(f"win count: {win_count}")
