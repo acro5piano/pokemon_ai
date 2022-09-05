@@ -42,13 +42,15 @@ class StupidRandomPlayer(Player):
 
 
 class NeuralNetworkPlayer(Player):
-    model: Pipeline
+    model: MLPRegressor
 
-    def __init__(self, model: Pipeline, step: int):
+    def __init__(self, model: MLPRegressor, step: int):
         self.model = model
         self.pokemons = build_random_team()
         self.step = step
         # TODO: create a team from neural network. How to do it???
+        # Maybe we can calculate team's win rate and use it as learning data
+
         # if random() < EPSILON:
         #     self.pokemons = build_random_team()
         # else:
@@ -72,7 +74,8 @@ class NeuralNetworkPlayer(Player):
 
 
 class ValueFunctionAgent:
-    model: Pipeline
+    # model: Pipeline
+    model: MLPRegressor
     battle: Battle
     learner: Player
     opponent: Player
@@ -91,7 +94,7 @@ class ValueFunctionAgent:
         # )
         self.model = MLPRegressor(
             hidden_layer_sizes=(10, 10),
-            max_iter=1,
+            max_iter=10000,
         )
         self.step = step
         fake_state = np.array([[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]])
@@ -117,7 +120,7 @@ class ValueFunctionAgent:
             # action[1] = action content,
             y[i][experience.action.value] = reward
 
-        self.model.fit(states, y)
+        self.model.partial_fit(states, y)
 
 
 def build_random_team() -> list[p.Pokemon]:
@@ -133,12 +136,13 @@ class Trainer:
     step = 0
     experiences = deque(maxlen=1024)
 
-    def __init__(self):
+    def __init__(self, episodes: int):
         self.agent = ValueFunctionAgent(self.step)
+        self.episodes = episodes
 
     def train(self):
         win_count = 0
-        for i in range(0, 100000):
+        for _ in range(0, self.episodes):
             self.agent.reset()
             battle = Battle(self.agent.learner, self.agent.opponent)
             battle.validate()
@@ -179,4 +183,4 @@ class Trainer:
                     log("battle is too long")
                     break
             self.agent.update(self.experiences)
-        log(f"win count: {win_count}")
+        print(f"win count: {win_count}")

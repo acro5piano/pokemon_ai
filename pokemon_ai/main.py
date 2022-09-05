@@ -1,8 +1,14 @@
+import argparse
+
 from pokemon_ai.dqn.value_function_agent import Trainer
 
 
 def main():
-    trainer = Trainer()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--episodes", type=int, required=True)
+    parser.add_argument("--debug", type=bool, required=False, default=False)
+    args = parser.parse_args()
+    trainer = Trainer(episodes=args.episodes)
     trainer.train()
 
 
