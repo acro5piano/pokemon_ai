@@ -1,5 +1,7 @@
 import argparse
 
+import joblib
+
 from pokemon_ai.dqn.value_function_agent import Trainer
 
 
@@ -10,6 +12,7 @@ def main():
     args = parser.parse_args()
     trainer = Trainer(episodes=args.episodes)
     trainer.train()
+    joblib.dump(trainer.agent.model, "models/model.pkl")
 
 
 if __name__ == "__main__":
