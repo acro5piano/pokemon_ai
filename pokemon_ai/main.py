@@ -9,19 +9,19 @@ app = typer.Typer()
 
 
 @app.command()
-def learn(episodes: int, debug: bool = False):
+def learn(episodes: int = 10000, model_path: str = "models/model.pkl", debug: bool = False):
     if debug:
         logging.basicConfig(level=logging.DEBUG)
     trainer = Trainer(episodes=episodes)
     trainer.train()
-    joblib.dump(trainer.agent.model, "models/model.pkl")
+    joblib.dump(trainer.agent.model, model_path)
 
 
 @app.command()
-def replay(episodes: int = 101, debug: bool = True):
+def replay(episodes: int = 101, model_path: str = "models/model.pkl", debug: bool = True):
     if debug:
         logging.basicConfig(level=logging.DEBUG)
-    model = joblib.load("models/model.pkl")
+    model = joblib.load(model_path)
     trainer = Trainer(episodes=episodes, model=model)
     trainer.train()
 

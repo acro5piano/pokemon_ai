@@ -137,6 +137,7 @@ class Trainer:
         self.episodes = episodes
 
     def train(self):
+        win_count_total = 0
         win_count_of_100 = 0
         for episode in range(0, self.episodes):
             self.agent.reset()
@@ -146,8 +147,10 @@ class Trainer:
             while True:
                 logging.info("")
                 current_state = battle.to_array()
+                current_opponent_pokemon_count = len(battle.player2.get_available_pokemons())
                 action, _ = battle.forward_step()
                 winner = battle.get_winner()
+                next_opponent_pokemon_count = len(battle.player2.get_available_pokemons())
                 if action is not None:
                     reward = 0
                     if winner == self.agent.learner:
@@ -159,6 +162,8 @@ class Trainer:
                     if battle.turn > 500:
                         logging.info("battle is too long")
                         reward = -0.1
+                    if current_opponent_pokemon_count > next_opponent_pokemon_count:
+                        reward += 0.3
                     self.experiences.append(
                         Experience(
                             state=current_state,
@@ -172,6 +177,7 @@ class Trainer:
                 logging.info(battle)
                 if winner is not None or battle.turn > 500:
                     if winner == self.agent.learner:
+                        win_count_total += 1
                         win_count_of_100 += 1
                     break
             if len(self.experiences) > 64:
@@ -179,5 +185,9 @@ class Trainer:
             if episode > 0 and episode % 100 == 0:
                 print(f"=============")
                 print(f"episode {episode}")
-                print(f"Win Rate: {win_count_of_100 / 100}")
+                print(f"Win Rate of 100: {win_count_of_100 / 100}")
+                print(f"Total Win Rate: {win_count_total / episode}")
                 win_count_of_100 = 0
+        print(f"=======================================")
+        print(f"Total Win Count: {win_count_total}")
+        print(f"Total Win Rate: {win_count_total / self.episodes}")
