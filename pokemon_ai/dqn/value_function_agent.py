@@ -181,5 +181,6 @@ class Trainer:
                 if battle.turn > 500:
                     log("battle is too long")
                     break
-            self.agent.update(sample(self.experiences, 32))
+            if len(self.experiences) > 64:
+                self.agent.update(sample(self.experiences, 64))
         print(f"win count: {win_count}")
