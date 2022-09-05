@@ -55,7 +55,7 @@ class Battle:
             # to handle both player choose a move
             c1, c2 = get_spe_ordered_pokemon(
                 (active_pokemon1, active_pokemon1.actual_moves[0]),
-                (active_pokemon2, active_pokemon1.actual_moves[0]),
+                (active_pokemon2, active_pokemon2.actual_moves[0]),
             )
             log(f"{c1[0]} used {c1[1]}!")
             damage = calculate_damage(c1[0], c2[0], c1[1])

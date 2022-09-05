@@ -23,10 +23,10 @@ GAMMA = 0.9
 
 @dataclass
 class Experience:
-    state: list[list[int]]
+    state: list[int]
     action: Action
     reward: float
-    next_state: list[list[int]]
+    next_state: list[int]
     done: bool
 
 
@@ -78,23 +78,25 @@ class ValueFunctionAgent:
     opponent: Player
 
     def __init__(self, step: int):
-        self.model = Pipeline(
-            [
-                ("scaler", StandardScaler()),
-                (
-                    "mlp",
-                    MLPRegressor(
-                        hidden_layer_sizes=(10, 10),
-                        max_iter=1,
-                    ),
-                ),
-            ]
+        # self.model = Pipeline(
+        #     [
+        #         (
+        #             "mlp",
+        #             MLPRegressor(
+        #                 hidden_layer_sizes=(10, 10),
+        #                 max_iter=1,
+        #             ),
+        #         ),
+        #     ]
+        # )
+        self.model = MLPRegressor(
+            hidden_layer_sizes=(10, 10),
+            max_iter=1,
         )
         self.step = step
         fake_state = np.array([[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]])
         fake_estimation = np.array([[0, 0]])
-        self.model.named_steps["scaler"].fit(fake_state)
-        self.model.fit(fake_state, fake_estimation)
+        self.model.partial_fit(fake_state, fake_estimation)
 
     def reset(self):
         self.learner = NeuralNetworkPlayer(self.model, self.step)
@@ -115,9 +117,7 @@ class ValueFunctionAgent:
             # action[1] = action content,
             y[i][experience.action.value] = reward
 
-        print(states)
-        X = self.model.named_steps("scaler").transform(states)
-        self.model.named_steps("mlp").partial_fit(X, y)
+        self.model.fit(states, y)
 
 
 def build_random_team() -> list[p.Pokemon]:
@@ -137,42 +137,46 @@ class Trainer:
         self.agent = ValueFunctionAgent(self.step)
 
     def train(self):
-        self.agent.reset()
-        battle = Battle(self.agent.learner, self.agent.opponent)
-        battle.validate()
-        log(battle)
-        while True:
-            log("")
-            current_state = battle.to_array()
-            action, _ = battle.forward_step()
-            winner = battle.get_winner()
-            if action is not None:
-                reward = 0
-                if winner == self.agent.learner:
-                    log(f"learner won the battle!")
-                    reward = 1
-                if winner == self.agent.opponent:
-                    log(f"learner lost...")
-                    reward = -1
-                self.experiences.append(
-                    Experience(
-                        state=current_state,
-                        action=action,
-                        reward=reward,
-                        next_state=battle.to_array(),
-                        done=winner is not None,
-                    )
-                )
-                # # This is required to fit before predicting.
-                # if self.step == 0:
-                #     states = np.vstack([e.state for e in self.experiences])
-                #     self.agent.model.named_steps["scaler"].fit(states)
-                #     self.agent.update(self.experiences)
-            self.step += 1
+        win_count = 0
+        for i in range(0, 100000):
+            self.agent.reset()
+            battle = Battle(self.agent.learner, self.agent.opponent)
+            battle.validate()
             log(battle)
-            if winner is not None:
-                break
-            if battle.turn > 500:
-                log("battle is too long")
-                break
-        self.agent.update(self.experiences)
+            while True:
+                log("")
+                current_state = battle.to_array()
+                action, _ = battle.forward_step()
+                winner = battle.get_winner()
+                if action is not None:
+                    reward = 0
+                    if winner == self.agent.learner:
+                        log(f"learner won the battle!")
+                        reward = 1
+                        win_count += 1
+                    if winner == self.agent.opponent:
+                        log(f"learner lost...")
+                        reward = -1
+                    self.experiences.append(
+                        Experience(
+                            state=current_state,
+                            action=action,
+                            reward=reward,
+                            next_state=battle.to_array(),
+                            done=winner is not None,
+                        )
+                    )
+                    # # This is required to fit before predicting.
+                    # if self.step == 0:
+                    #     states = np.vstack([e.state for e in self.experiences])
+                    #     self.agent.model.named_steps["scaler"].fit(states)
+                    #     self.agent.update(self.experiences)
+                self.step += 1
+                log(battle)
+                if winner is not None:
+                    break
+                if battle.turn > 500:
+                    log("battle is too long")
+                    break
+            self.agent.update(self.experiences)
+        log(f"win count: {win_count}")
