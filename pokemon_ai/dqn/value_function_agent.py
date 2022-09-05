@@ -99,7 +99,7 @@ class ValueFunctionAgent:
         # )
         self.model = MLPRegressor(
             hidden_layer_sizes=(10, 10),
-            max_iter=10000,
+            max_iter=200,
         )
         fake_state = np.array([[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]])
         fake_estimation = np.array([[0, 0]])
