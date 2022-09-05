@@ -1,6 +1,7 @@
 from collections import deque
 from dataclasses import dataclass
 from random import random, sample
+from typing import Optional
 
 import numpy as np
 from sklearn.neural_network import MLPRegressor
@@ -85,22 +86,15 @@ class ValueFunctionAgent:
 
     def __init__(
         self,
+        model: Optional[MLPRegressor] = None,
     ):
-        # self.model = Pipeline(
-        #     [
-        #         (
-        #             "mlp",
-        #             MLPRegressor(
-        #                 hidden_layer_sizes=(10, 10),
-        #                 max_iter=1,
-        #             ),
-        #         ),
-        #     ]
-        # )
-        self.model = MLPRegressor(
-            hidden_layer_sizes=(10, 10),
-            max_iter=200,
-        )
+        if model:
+            self.model = model
+        else:
+            self.model = MLPRegressor(
+                hidden_layer_sizes=(10, 10),
+                max_iter=200,
+            )
         fake_state = np.array([[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]])
         fake_estimation = np.array([[0, 0]])
         self.model.partial_fit(fake_state, fake_estimation)
@@ -138,12 +132,12 @@ class Trainer:
     step = 0
     experiences = deque(maxlen=1024)
 
-    def __init__(self, episodes: int):
-        self.agent = ValueFunctionAgent()
+    def __init__(self, episodes: int, model: Optional[MLPRegressor] = None):
+        self.agent = ValueFunctionAgent(model=model)
         self.episodes = episodes
 
     def train(self):
-        win_count = 0
+        win_count_of_100 = 0
         for episode in range(0, self.episodes):
             self.agent.reset()
             battle = Battle(self.agent.learner, self.agent.opponent)
@@ -176,14 +170,14 @@ class Trainer:
                     )
                 self.step += 1
                 log(battle)
-                if winner is not None:
+                if winner is not None or battle.turn > 500:
                     if winner == self.agent.learner:
-                        win_count += 1
+                        win_count_of_100 += 1
                     break
             if len(self.experiences) > 64:
                 self.agent.update(sample(self.experiences, 64))
             if episode > 0 and episode % 100 == 0:
                 print(f"=============")
                 print(f"episode {episode}")
-                win_rate = win_count / episode
-                print(f"Win Rate: {win_rate}")
+                print(f"Win Rate: {win_count_of_100 / 100}")
+                win_count_of_100 = 0
