@@ -146,7 +146,7 @@ class Trainer:
 
     def train(self):
         win_count = 0
-        for _ in range(0, self.episodes):
+        for episode in range(0, self.episodes):
             self.agent.reset()
             battle = Battle(self.agent.learner, self.agent.opponent)
             battle.validate()
@@ -184,4 +184,8 @@ class Trainer:
                     break
             if len(self.experiences) > 64:
                 self.agent.update(sample(self.experiences, 64))
-        print(f"win count: {win_count}")
+            if episode > 0 and episode % 100 == 0:
+                print(f"=============")
+                print(f"episode {episode}")
+                win_rate = win_count / episode
+                print(f"Win Rate: {win_rate}")
