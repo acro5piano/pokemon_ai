@@ -1,29 +1,15 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import Union
+import itertools
+from enum import Enum
 
-from pokemon_ai.simulator.moves import Move
 from pokemon_ai.simulator.pokedex import Pokemon
 
 
-@dataclass
-class ActionChangeTo:
-    change_to: Pokemon
-
-    def to_array(self):
-        return [0, self.change_to.id]
-
-
-@dataclass
-class ActionSelectMove:
-    move: Move
-
-    def to_array(self):
-        return [0, self.move.id]
-
-
-Action = Union[ActionChangeTo, ActionSelectMove]
+# TODO: support all type of action
+class Action(Enum):
+    CHANGE = 0
+    FIGHT = 1
 
 
 class Player:
@@ -36,11 +22,9 @@ class Player:
     def choose_action(self, _opponent: Player) -> Action:
         raise NotImplementedError
 
-    def choose_action_on_pokemon_dead(self, _opponent: Player) -> ActionChangeTo:
-        raise NotImplementedError
-
-    def change_pokemon_index_to(self, pokemon: Pokemon):
-        self.active_pokemon_index = self.pokemons.index(pokemon)
+    def choose_action_on_pokemon_dead(self, _opponent: Player) -> Action:
+        return Action.CHANGE
+        # raise NotImplementedError
 
     def get_active_pokemon(self) -> Pokemon:
         return self.pokemons[self.active_pokemon_index]
@@ -58,4 +42,5 @@ class Player:
         return f"{self.__class__.__name__}({self.pokemons} active:{self.active_pokemon_index})"
 
     def to_array(self):
-        return [p.to_array() for p in self.pokemons]
+        list2d = [p.to_array() for p in self.pokemons]
+        return list(itertools.chain(*list2d))

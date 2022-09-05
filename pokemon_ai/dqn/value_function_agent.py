@@ -1,4 +1,5 @@
-from collections import deque, namedtuple
+from collections import deque
+from dataclasses import dataclass
 from random import random, sample
 
 import numpy as np
@@ -9,16 +10,35 @@ from sklearn.preprocessing import StandardScaler
 import pokemon_ai.simulator.moves as m
 import pokemon_ai.simulator.pokedex as p
 from pokemon_ai.logger import log
-from pokemon_ai.simulator.battle import Battle
-from pokemon_ai.simulator.player import Action, ActionChangeTo, ActionSelectMove, Player
-from pokemon_ai.simulator.sample_players import StupidRandomPlayer
+from pokemon_ai.simulator.battle_simplified import Battle
+from pokemon_ai.simulator.player import Action, Player
 
 EPSILON = 0.2
 GAMMA = 0.9
 
 
 # TODO: use dataclass
-Experience = namedtuple("Experience", ["state", "action", "reward", "next_state", "done"])
+# Experience = namedtuple("Experience", ["state", "action", "reward", "next_state", "done"])
+
+
+@dataclass
+class Experience:
+    state: list[list[int]]
+    action: Action
+    reward: float
+    next_state: list[list[int]]
+    done: bool
+
+
+class StupidRandomPlayer(Player):
+    def choose_action(self, opponent: Player) -> Action:
+        available_pokemons = self.get_available_pokemons_for_change()
+        if len(available_pokemons) == 0:
+            return Action.FIGHT
+        if random() < 0.5:
+            return Action.FIGHT
+        else:
+            return Action.CHANGE
 
 
 class NeuralNetworkPlayer(Player):
@@ -37,18 +57,18 @@ class NeuralNetworkPlayer(Player):
     def choose_action(self, opponent: Player) -> Action:
         available_pokemons = self.get_available_pokemons_for_change()
         if len(available_pokemons) == 0:
-            return ActionSelectMove(self.get_active_pokemon().actual_moves[0])
+            return Action.FIGHT
         if self.step == 0 or random() < EPSILON:
             if random() < 0.5:
-                return ActionSelectMove(self.get_active_pokemon().actual_moves[0])
+                return Action.FIGHT
             else:
-                return ActionChangeTo(available_pokemons[0])
+                return Action.CHANGE
         action = self.model.predict([*self.to_array(), *opponent.to_array()])
         print(action)
         return action
 
-    def choose_action_on_pokemon_dead(self, opponent: Player) -> ActionChangeTo:
-        return ActionChangeTo(self.get_available_pokemons()[0])
+    def choose_action_on_pokemon_dead(self, opponent: Player) -> Action:
+        return Action.CHANGE
 
 
 class ValueFunctionAgent:
@@ -71,8 +91,8 @@ class ValueFunctionAgent:
             ]
         )
         self.step = step
-        fake_state = np.array([[0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0]])
-        fake_estimation = np.array([[0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0]])
+        fake_state = np.array([[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]])
+        fake_estimation = np.array([[0, 0]])
         self.model.named_steps["scaler"].fit(fake_state)
         self.model.fit(fake_state, fake_estimation)
 
@@ -81,8 +101,8 @@ class ValueFunctionAgent:
         self.opponent = StupidRandomPlayer(build_random_team())
 
     def update(self, experiences: deque[Experience]):
-        states = np.vstack([e.state for e in experiences])
-        next_states = np.vstack([e.next_state for e in experiences])
+        states = np.array([e.state for e in experiences])
+        next_states = np.array([e.next_state for e in experiences])
 
         y = self.model.predict(states)
         future = self.model.predict(next_states)
@@ -91,12 +111,11 @@ class ValueFunctionAgent:
             reward = experience.reward
             if not experience.done:
                 reward += GAMMA * np.max(future[i])
-            print(y)
-            print(experience.action)
             # action[0] = action type,
             # action[1] = action content,
-            y[i][experience.action[0]][experience.action[1]] = reward
+            y[i][experience.action.value] = reward
 
+        print(states)
         X = self.model.named_steps("scaler").transform(states)
         self.model.named_steps("mlp").partial_fit(X, y)
 
@@ -138,18 +157,17 @@ class Trainer:
                 self.experiences.append(
                     Experience(
                         state=current_state,
-                        action=action.to_array(),
+                        action=action,
                         reward=reward,
                         next_state=battle.to_array(),
                         done=winner is not None,
                     )
                 )
-
-                # This is required to fit before predicting.
-                if self.step == 0:
-                    states = np.vstack([e.state for e in self.experiences])
-                    self.agent.model.named_steps["scaler"].fit(states)
-                    self.agent.update(self.experiences)
+                # # This is required to fit before predicting.
+                # if self.step == 0:
+                #     states = np.vstack([e.state for e in self.experiences])
+                #     self.agent.model.named_steps["scaler"].fit(states)
+                #     self.agent.update(self.experiences)
             self.step += 1
             log(battle)
             if winner is not None:
