@@ -1,13 +1,20 @@
 from __future__ import annotations
 
+import logging
 from random import random
 from typing import Optional
 
-from pokemon_ai.logger import log
 from pokemon_ai.simulator.damage import calculate_damage
 from pokemon_ai.simulator.moves import Move
-from pokemon_ai.simulator.player import Action, ActionChangeTo, ActionSelectMove, Player
+from pokemon_ai.simulator.player import Action, Player
 from pokemon_ai.simulator.pokedex import Pokemon
+
+
+def invert(n: int) -> int:
+    if n == 0:
+        return 1
+    else:
+        return 0
 
 
 class Battle:
@@ -23,64 +30,57 @@ class Battle:
         self.turn += 1
 
         if self.player1.get_active_pokemon().actual_hp <= 0:
-            action = self.player1.choose_action_on_pokemon_dead(self.player2)
-            self.player1.change_pokemon_index_to(action.change_to)
-            log(f"{self.player1} changed to {action.change_to}")
-            return action, None
+            self.player1.active_pokemon_index = invert(self.player1.active_pokemon_index)
+            return None, None
         if self.player2.get_active_pokemon().actual_hp <= 0:
-            action = self.player2.choose_action_on_pokemon_dead(self.player1)
-            self.player2.change_pokemon_index_to(action.change_to)
-            log(f"{self.player2} changed to {action.change_to}")
-            return None, action
+            self.player2.active_pokemon_index = invert(self.player2.active_pokemon_index)
+            return None, None
 
         action1 = self.player1.choose_action(self.player2)
         action2 = self.player2.choose_action(self.player1)
 
         # Handle pokemon change
-        if isinstance(action1, ActionChangeTo):
-            if action1.change_to not in self.player1.get_available_pokemons_for_change():
-                raise Exception(
-                    f"{self.player1} tried to change to {action1.change_to} but it's not available"
-                )
-            self.player1.change_pokemon_index_to(action1.change_to)
-            log(f"{self.player1} changed to {action1.change_to}")
-        if isinstance(action2, ActionChangeTo):
-            if action2.change_to not in self.player2.get_available_pokemons_for_change():
-                raise Exception(
-                    f"{self.player2} tried to change to {action2.change_to} but it's not available"
-                )
-            self.player2.change_pokemon_index_to(action2.change_to)
-            log(f"{self.player2} changed to {action2.change_to}")
+        if action1 == Action.CHANGE:
+            self.player1.active_pokemon_index = invert(self.player1.active_pokemon_index)
+            logging.info(f"{self.player1} changed their pokemon")
+        if action2 == Action.CHANGE:
+            self.player2.active_pokemon_index = invert(self.player2.active_pokemon_index)
+            logging.info(f"{self.player2} changed their pokemon")
 
         active_pokemon1 = self.player1.get_active_pokemon()
         active_pokemon2 = self.player2.get_active_pokemon()
 
         # Handle pokemon damage
-        if isinstance(action1, ActionSelectMove) and isinstance(action2, ActionSelectMove):
+        if action1 == Action.FIGHT and action2 == Action.FIGHT:
             # to handle both player choose a move
             c1, c2 = get_spe_ordered_pokemon(
-                (active_pokemon1, action1.move), (active_pokemon2, action2.move)
+                (active_pokemon1, active_pokemon1.actual_moves[0]),
+                (active_pokemon2, active_pokemon2.actual_moves[0]),
             )
-            log(f"{c1[0]} used {action1.move}!")
+            logging.info(f"{c1[0]} used {c1[1]}!")
             damage = calculate_damage(c1[0], c2[0], c1[1])
             c2[0].actual_hp -= damage
-            log(f"{c2[0]} got {damage}")
+            logging.info(f"{c2[0]} got {damage}")
             if c2[0].actual_hp > 0:
-                log(f"{c2[0]} used {action2.move}!")
+                logging.info(f"{c2[0]} used {c2[1]}!")
                 damage = calculate_damage(c2[0], c1[0], c2[1])
                 c1[0].actual_hp -= damage
-                log(f"{c1[0]} got {damage}")
+                logging.info(f"{c1[0]} got {damage}")
         else:
-            if isinstance(action1, ActionSelectMove):
-                log(f"{active_pokemon1} used {action1.move}!")
-                damage = calculate_damage(active_pokemon1, active_pokemon2, action1.move)
+            if action1 == Action.FIGHT:
+                logging.info(f"{active_pokemon1} used {active_pokemon1.actual_moves[0]}!")
+                damage = calculate_damage(
+                    active_pokemon1, active_pokemon2, active_pokemon1.actual_moves[0]
+                )
                 active_pokemon2.actual_hp -= damage
-                log(f"{active_pokemon2} got {damage}")
-            if isinstance(action2, ActionSelectMove):
-                log(f"{active_pokemon2} used {action2.move}!")
-                damage = calculate_damage(active_pokemon2, active_pokemon1, action2.move)
+                logging.info(f"{active_pokemon2} got {damage}")
+            if action2 == Action.FIGHT:
+                logging.info(f"{active_pokemon2} used {active_pokemon2.actual_moves[0]}!")
+                damage = calculate_damage(
+                    active_pokemon2, active_pokemon1, active_pokemon2.actual_moves[0]
+                )
                 active_pokemon1.actual_hp -= damage
-                log(f"{active_pokemon1} got {damage}")
+                logging.info(f"{active_pokemon1} got {damage}")
 
         return action1, action2
 
@@ -99,18 +99,18 @@ class Battle:
                 raise ValueError("Pokemon must have at least one move")
 
     def run(self) -> Player:
-        log(self)
+        logging.info(self)
         self.validate()
         while True:
-            log("")
+            logging.info("")
             self.forward_step()
             winner = self.get_winner()
             if winner is not None:
-                log(f"{winner} won the battle!")
+                logging.info(f"{winner} won the battle!")
                 return winner
             if self.turn > 500:
                 raise Exception("Battle is too long")
-            log(self)
+            logging.info(self)
 
     def to_array(self):
         return [*self.player1.to_array(), *self.player2.to_array()]

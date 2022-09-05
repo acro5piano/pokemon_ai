@@ -4,8 +4,6 @@ from sklearn.model_selection import train_test_split
 from sklearn.neural_network import MLPClassifier
 
 dataset = load_digits()
-image_shape = (8, 8, 1)
-num_class = 10
 
 
 y = dataset.target  # type: ignore
