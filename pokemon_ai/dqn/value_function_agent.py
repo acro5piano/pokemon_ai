@@ -161,10 +161,12 @@ class Trainer:
                     if winner == self.agent.learner:
                         log(f"learner won the battle!")
                         reward = 1
-                        win_count += 1
                     if winner == self.agent.opponent:
                         log(f"learner lost...")
                         reward = -1
+                    if battle.turn > 500:
+                        log("battle is too long")
+                        reward = -0.1
                     self.experiences.append(
                         Experience(
                             state=current_state,
@@ -177,9 +179,8 @@ class Trainer:
                 self.step += 1
                 log(battle)
                 if winner is not None:
-                    break
-                if battle.turn > 500:
-                    log("battle is too long")
+                    if winner == self.agent.learner:
+                        win_count += 1
                     break
             if len(self.experiences) > 64:
                 self.agent.update(sample(self.experiences, 64))
