@@ -22,7 +22,7 @@ def replay(episodes: int = 101, model_path: str = "models/model.pkl", debug: boo
     if debug:
         logging.basicConfig(level=logging.DEBUG)
     model = joblib.load(model_path)
-    trainer = Trainer(episodes=episodes, model=model)
+    trainer = Trainer(episodes=episodes, model=model, epsilon=0)
     trainer.train()
 
 

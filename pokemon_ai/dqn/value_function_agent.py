@@ -16,7 +16,6 @@ from pokemon_ai.simulator.player import Action, Player
 # from sklearn.preprocessing import StandardScaler
 
 
-EPSILON = 0.2
 GAMMA = 0.9
 
 
@@ -46,13 +45,16 @@ class StupidRandomPlayer(Player):
 
 class NeuralNetworkPlayer(Player):
     model: MLPRegressor
+    epsilon: float
 
     def __init__(
         self,
         model: MLPRegressor,
+        epsilon: float,
     ):
         self.model = model
         self.pokemons = build_random_team()
+        self.epsilon = epsilon
         # TODO: create a team from neural network. How to do it???
         # Maybe we can calculate team's win rate and use it as learning data
 
@@ -65,7 +67,7 @@ class NeuralNetworkPlayer(Player):
         available_pokemons = self.get_available_pokemons_for_change()
         if len(available_pokemons) == 0:
             return Action.FIGHT
-        if random() < EPSILON:
+        if random() < self.epsilon:
             if random() < 0.5:
                 return Action.FIGHT
             else:
@@ -83,10 +85,12 @@ class ValueFunctionAgent:
     battle: Battle
     learner: Player
     opponent: Player
+    epsilon: float
 
     def __init__(
         self,
         model: Optional[MLPRegressor] = None,
+        epsilon: float = 0.2,
     ):
         if model:
             self.model = model
@@ -95,12 +99,13 @@ class ValueFunctionAgent:
                 hidden_layer_sizes=(10, 10),
                 max_iter=200,
             )
+        self.epsilon = epsilon
         fake_state = np.array([[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]])
         fake_estimation = np.array([[0, 0]])
         self.model.partial_fit(fake_state, fake_estimation)
 
     def reset(self):
-        self.learner = NeuralNetworkPlayer(self.model)
+        self.learner = NeuralNetworkPlayer(self.model, self.epsilon)
         self.opponent = StupidRandomPlayer(build_random_team())
 
     def update(self, experiences: list[Experience]):
@@ -132,8 +137,8 @@ class Trainer:
     step = 0
     experiences = deque(maxlen=1024)
 
-    def __init__(self, episodes: int, model: Optional[MLPRegressor] = None):
-        self.agent = ValueFunctionAgent(model=model)
+    def __init__(self, episodes: int, model: Optional[MLPRegressor] = None, epsilon: float = 0.2):
+        self.agent = ValueFunctionAgent(model=model, epsilon=epsilon)
         self.episodes = episodes
 
     def train(self):
@@ -145,12 +150,18 @@ class Trainer:
             battle.validate()
             logging.info(battle)
             while True:
-                logging.info("")
+                logging.info(f"=== turn {battle.turn} ===")
                 current_state = battle.to_array()
+
+                current_learner_pokemon_count = len(battle.player1.get_available_pokemons())
                 current_opponent_pokemon_count = len(battle.player2.get_available_pokemons())
+
                 action, _ = battle.forward_step()
                 winner = battle.get_winner()
+
+                next_learner_pokemon_count = len(battle.player1.get_available_pokemons())
                 next_opponent_pokemon_count = len(battle.player2.get_available_pokemons())
+
                 if action is not None:
                     reward = 0
                     if winner == self.agent.learner:
@@ -164,6 +175,8 @@ class Trainer:
                         reward = -0.1
                     if current_opponent_pokemon_count > next_opponent_pokemon_count:
                         reward += 0.3
+                    if current_learner_pokemon_count > next_learner_pokemon_count:
+                        reward -= 0.3
                     self.experiences.append(
                         Experience(
                             state=current_state,
