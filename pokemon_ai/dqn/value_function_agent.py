@@ -120,8 +120,6 @@ class ValueFunctionAgent:
             reward = experience.reward
             if not experience.done:
                 reward += GAMMA * np.max(future[i])
-            # action[0] = action type,
-            # action[1] = action content,
             y[i][experience.action.value] = reward
 
         self.model.partial_fit(states, y)
