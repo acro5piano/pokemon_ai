@@ -1,7 +1,7 @@
+import logging
 from math import floor
 from random import randint, random
 
-from pokemon_ai.logger import log
 from pokemon_ai.simulator.constant import LEVEL, MAX_DETERMINANT_VALUE
 from pokemon_ai.simulator.moves import Move
 from pokemon_ai.simulator.pokedex import Pokemon
@@ -21,7 +21,7 @@ def to_real_value(stat: int) -> int:
 def calculate_damage(attacker: Pokemon, defender: Pokemon, move: Move) -> int:
     is_critical_hit = random() < (attacker.spe / 512)
     if is_critical_hit:
-        log("a critical hit!")
+        logging.info("a critical hit!")
 
     modifier = 1
 
@@ -37,14 +37,14 @@ def calculate_damage(attacker: Pokemon, defender: Pokemon, move: Move) -> int:
                 modifier = 0
 
     if modifier > 1:
-        log(f"super effective! {modifier}")
+        logging.info(f"super effective! {modifier}")
     if modifier < 1:
-        log(f"It's not very effective... {modifier}")
+        logging.info(f"It's not very effective... {modifier}")
 
     for attacker_type in attacker.types:
         if attacker_type == move.type:
             modifier *= 1.5
-            log("STAB attack!")
+            logging.info("STAB attack!")
 
     modifier *= randint(217, 255) / 255
 

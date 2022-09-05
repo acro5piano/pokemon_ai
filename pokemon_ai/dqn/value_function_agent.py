@@ -1,3 +1,4 @@
+import logging
 from collections import deque
 from dataclasses import dataclass
 from random import random, sample
@@ -8,7 +9,6 @@ from sklearn.neural_network import MLPRegressor
 
 import pokemon_ai.simulator.moves as m
 import pokemon_ai.simulator.pokedex as p
-from pokemon_ai.logger import log
 from pokemon_ai.simulator.battle_simplified import Battle
 from pokemon_ai.simulator.player import Action, Player
 
@@ -142,22 +142,22 @@ class Trainer:
             self.agent.reset()
             battle = Battle(self.agent.learner, self.agent.opponent)
             battle.validate()
-            log(battle)
+            logging.info(battle)
             while True:
-                log("")
+                logging.info("")
                 current_state = battle.to_array()
                 action, _ = battle.forward_step()
                 winner = battle.get_winner()
                 if action is not None:
                     reward = 0
                     if winner == self.agent.learner:
-                        log(f"learner won the battle!")
+                        logging.info(f"learner won the battle!")
                         reward = 1
                     if winner == self.agent.opponent:
-                        log(f"learner lost...")
+                        logging.info(f"learner lost...")
                         reward = -1
                     if battle.turn > 500:
-                        log("battle is too long")
+                        logging.info("battle is too long")
                         reward = -0.1
                     self.experiences.append(
                         Experience(
@@ -169,7 +169,7 @@ class Trainer:
                         )
                     )
                 self.step += 1
-                log(battle)
+                logging.info(battle)
                 if winner is not None or battle.turn > 500:
                     if winner == self.agent.learner:
                         win_count_of_100 += 1
