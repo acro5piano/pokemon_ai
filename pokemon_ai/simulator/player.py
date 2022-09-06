@@ -2,6 +2,9 @@ from __future__ import annotations
 
 import itertools
 from enum import Enum
+from random import random
+
+import numpy as np
 
 from pokemon_ai.simulator.pokedex import Pokemon
 
@@ -86,6 +89,22 @@ class Player:
         pokemon = self.pokemons[new_active_index]
         if pokemon.actual_hp <= 0:
             raise ValueError(f"Cannot change to dead pokemon {pokemon}")
+        if new_active_index == self.active_pokemon_index:
+            raise ValueError(f"Cannot change to same pokemon {pokemon}")
+
+    def get_random_living_pokemon_index_to_replace(self) -> int:
+        array = [0.0 for _ in range(len(self.pokemons))]
+        for index, _ in enumerate(array):
+            if self.pokemons[index].actual_hp > 0 and self.active_pokemon_index != index:
+                array[index] = random()
+        return int(np.array(array).argmax())
+
+    def get_random_living_pokemon_index(self) -> int:
+        array = [0.0 for _ in range(len(self.pokemons))]
+        for index, _ in enumerate(array):
+            if self.pokemons[index].actual_hp > 0:
+                array[index] = random()
+        return int(np.array(array).argmax())
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.pokemons} active:{self.get_active_pokemon()})"

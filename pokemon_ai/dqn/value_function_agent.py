@@ -19,17 +19,10 @@ class StupidRandomPlayer(Player):
         if len(available_pokemons) == 0 or random() < 0.7:
             return self.pick_random_move_action()
         else:
-            return self.change_to_random_pokemon_action()
+            return Action.change_to(self.get_random_living_pokemon_index_to_replace())
 
     def choose_action_on_pokemon_dead(self, _opponent: Player) -> Action:
-        return self.change_to_random_pokemon_action()
-
-    # TODO: this is inefficient
-    def change_to_random_pokemon_action(self) -> Action:
-        for index, pokemon in enumerate(self.pokemons):
-            if pokemon.actual_hp > 0 and random() < 0.2:
-                return Action.change_to(index)
-        return self.change_to_random_pokemon_action()
+        return Action.change_to(self.get_random_living_pokemon_index())
 
     def pick_random_move_action(self) -> Action:
         return choice(
@@ -63,13 +56,13 @@ class NeuralNetworkPlayer(StupidRandomPlayer):
             if random() < 0.7:
                 return self.pick_random_move_action()
             else:
-                return self.change_to_random_pokemon_action()
+                return Action.change_to(self.get_random_living_pokemon_index_to_replace())
         predicts = self.model.predict([[*self.to_array(), *opponent.to_array()]])[0]
         return Action(predicts.argmax())
 
     def choose_action_on_pokemon_dead(self, opponent: Player) -> Action:
         if random() < self.epsilon:
-            return self.change_to_random_pokemon_action()
+            return Action.change_to(self.get_random_living_pokemon_index())
         else:
             predicts_arr = self.model.predict([[*self.to_array(), *opponent.to_array()]])
             predicts = predicts_arr[0][:6]  # [:6] removes moves
