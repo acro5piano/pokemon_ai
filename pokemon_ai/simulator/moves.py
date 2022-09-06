@@ -68,9 +68,17 @@ class DoubleKick(Move):
     type = t.Fighting()
 
 
-class HyperBeam(Move):
+class PinMissle(Move):
     id = 8
-    bp = 150
-    acc = 90
-    pp = 8
-    type = t.Normal()
+    bp = 42
+    acc = 85
+    pp = 32
+    type = t.Bug()
+
+
+class Psychic(Move):
+    id = 9
+    bp = 90
+    acc = 100
+    pp = 16
+    type = t.Psychic()

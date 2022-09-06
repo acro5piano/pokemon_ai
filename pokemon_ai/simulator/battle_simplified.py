@@ -10,13 +10,6 @@ from pokemon_ai.simulator.player import Action, Player
 from pokemon_ai.simulator.pokedex import Pokemon
 
 
-def invert(n: int) -> int:
-    if n == 0:
-        return 1
-    else:
-        return 0
-
-
 class Battle:
     player1: Player
     player2: Player
@@ -30,11 +23,13 @@ class Battle:
         self.turn += 1
 
         if self.player1.get_active_pokemon().actual_hp <= 0:
-            self.player1.active_pokemon_index = invert(self.player1.active_pokemon_index)
-            return None, None
+            action = self.player1.choose_action_on_pokemon_dead(self.player2)
+            self.player1.active_pokemon_index = action.value
+            return action, None
         if self.player2.get_active_pokemon().actual_hp <= 0:
-            self.player2.active_pokemon_index = invert(self.player2.active_pokemon_index)
-            return None, None
+            action = self.player2.choose_action_on_pokemon_dead(self.player1)
+            self.player2.active_pokemon_index = action.value
+            return None, action
 
         action1 = self.player1.choose_action(self.player2)
         action2 = self.player2.choose_action(self.player1)

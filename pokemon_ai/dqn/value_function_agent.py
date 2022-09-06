@@ -130,14 +130,14 @@ class ValueFunctionAgent:
 
 def build_random_team() -> list[p.Pokemon]:
     pokemons = [
-        p.Jolteon([m.Thunderbolt(), m.BodySlam(), m.DoubleKick(), m.HyperBeam()]),
-        p.Jolteon([m.Thunderbolt(), m.BodySlam(), m.DoubleKick(), m.HyperBeam()]),
-        p.Jolteon([m.Thunderbolt(), m.BodySlam(), m.DoubleKick(), m.HyperBeam()]),
-        p.Rhydon([m.Earthquake(), m.RockSlide(), m.HyperBeam(), m.BodySlam()]),
-        p.Rhydon([m.Earthquake(), m.RockSlide(), m.HyperBeam(), m.BodySlam()]),
-        p.Rhydon([m.Earthquake(), m.RockSlide(), m.HyperBeam(), m.BodySlam()]),
-        p.Starmie([m.Surf(), m.Blizzard(), m.HyperBeam(), m.Thunderbolt()]),
-        p.Starmie([m.Surf(), m.Blizzard(), m.HyperBeam(), m.Thunderbolt()]),
-        p.Starmie([m.Surf(), m.Blizzard(), m.HyperBeam(), m.Thunderbolt()]),
+        p.Jolteon([m.Thunderbolt(), m.BodySlam(), m.DoubleKick(), m.PinMissle()]),
+        p.Jolteon([m.Thunderbolt(), m.BodySlam(), m.DoubleKick(), m.PinMissle()]),
+        p.Jolteon([m.Thunderbolt(), m.BodySlam(), m.DoubleKick(), m.PinMissle()]),
+        p.Rhydon([m.Earthquake(), m.RockSlide(), m.Surf(), m.BodySlam()]),
+        p.Rhydon([m.Earthquake(), m.RockSlide(), m.Surf(), m.BodySlam()]),
+        p.Rhydon([m.Earthquake(), m.RockSlide(), m.Surf(), m.BodySlam()]),
+        p.Starmie([m.Surf(), m.Blizzard(), m.Psychic(), m.Thunderbolt()]),
+        p.Starmie([m.Surf(), m.Blizzard(), m.Psychic(), m.Thunderbolt()]),
+        p.Starmie([m.Surf(), m.Blizzard(), m.Psychic(), m.Thunderbolt()]),
     ]
     return sample(pokemons, 6)
