@@ -40,22 +40,22 @@ class Battle:
         action2 = self.player2.choose_action(self.player1)
 
         # Handle pokemon change
-        if action1 == Action.CHANGE:
-            self.player1.active_pokemon_index = invert(self.player1.active_pokemon_index)
+        if action1.is_change():
+            self.player1.active_pokemon_index = action1.value
             logging.info(f"{self.player1} changed their pokemon")
-        if action2 == Action.CHANGE:
-            self.player2.active_pokemon_index = invert(self.player2.active_pokemon_index)
+        if action2.is_change():
+            self.player2.active_pokemon_index = action2.value
             logging.info(f"{self.player2} changed their pokemon")
 
         active_pokemon1 = self.player1.get_active_pokemon()
         active_pokemon2 = self.player2.get_active_pokemon()
 
         # Handle pokemon damage
-        if action1 == Action.FIGHT and action2 == Action.FIGHT:
+        if action1.is_move() and action2.is_move():
             # to handle both player choose a move
             c1, c2 = get_spe_ordered_pokemon(
-                (active_pokemon1, active_pokemon1.actual_moves[0]),
-                (active_pokemon2, active_pokemon2.actual_moves[0]),
+                (active_pokemon1, active_pokemon1.actual_moves[action1.value - 6]),
+                (active_pokemon2, active_pokemon2.actual_moves[action2.value - 6]),
             )
             logging.info(f"{c1[0]} used {c1[1]}!")
             damage = calculate_damage(c1[0], c2[0], c1[1])
@@ -67,18 +67,16 @@ class Battle:
                 c1[0].actual_hp -= damage
                 logging.info(f"{c1[0]} got {damage}")
         else:
-            if action1 == Action.FIGHT:
-                logging.info(f"{active_pokemon1} used {active_pokemon1.actual_moves[0]}!")
-                damage = calculate_damage(
-                    active_pokemon1, active_pokemon2, active_pokemon1.actual_moves[0]
-                )
+            if action1.is_move():
+                move = active_pokemon1.actual_moves[action1.value - 6]
+                logging.info(f"{active_pokemon1} used {move}!")
+                damage = calculate_damage(active_pokemon1, active_pokemon2, move)
                 active_pokemon2.actual_hp -= damage
                 logging.info(f"{active_pokemon2} got {damage}")
-            if action2 == Action.FIGHT:
-                logging.info(f"{active_pokemon2} used {active_pokemon2.actual_moves[0]}!")
-                damage = calculate_damage(
-                    active_pokemon2, active_pokemon1, active_pokemon2.actual_moves[0]
-                )
+            if action2.is_move():
+                move = active_pokemon2.actual_moves[action2.value - 6]
+                logging.info(f"{active_pokemon2} used {move}!")
+                damage = calculate_damage(active_pokemon2, active_pokemon1, move)
                 active_pokemon1.actual_hp -= damage
                 logging.info(f"{active_pokemon1} got {damage}")
 

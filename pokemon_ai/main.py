@@ -3,7 +3,7 @@ import logging
 import joblib
 import typer
 
-from pokemon_ai.dqn.value_function_agent import Trainer
+from pokemon_ai.dqn.trainer import Trainer
 
 app = typer.Typer()
 

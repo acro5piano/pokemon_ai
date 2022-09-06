@@ -1,4 +1,4 @@
-from random import random, sample
+from random import choice, random, sample
 from typing import Optional
 
 import numpy as np
@@ -14,17 +14,34 @@ GAMMA = 0.9
 
 
 class StupidRandomPlayer(Player):
-    def choose_action(self, opponent: Player) -> Action:
+    def choose_action(self, _opponent: Player) -> Action:
         available_pokemons = self.get_available_pokemons_for_change()
-        if len(available_pokemons) == 0:
-            return Action.FIGHT
-        if random() < 0.5:
-            return Action.FIGHT
+        if len(available_pokemons) == 0 or random() < 0.7:
+            return self.pick_random_move_action()
         else:
-            return Action.CHANGE
+            return self.change_to_random_pokemon_action()
+
+    def choose_action_on_pokemon_dead(self, _opponent: Player) -> Action:
+        return self.change_to_random_pokemon_action()
+
+    def change_to_random_pokemon_action(self) -> Action:
+        for index, pokemon in enumerate(self.pokemons):
+            if pokemon.actual_hp > 0 and random() < 0.2:
+                return Action.change_to(index)
+        return self.change_to_random_pokemon_action()
+
+    def pick_random_move_action(self) -> Action:
+        return choice(
+            [
+                Action.MOVE_0,
+                Action.MOVE_1,
+                Action.MOVE_2,
+                Action.MOVE_3,
+            ]
+        )
 
 
-class NeuralNetworkPlayer(Player):
+class NeuralNetworkPlayer(StupidRandomPlayer):
     model: MLPRegressor
     epsilon: float
 
@@ -36,28 +53,34 @@ class NeuralNetworkPlayer(Player):
         self.model = model
         self.pokemons = build_random_team()
         self.epsilon = epsilon
-        # TODO: create a team from neural network. How to do it???
-        # Maybe we can calculate team's win rate and use it as learning data
-
-        # if random() < EPSILON:
-        #     self.pokemons = build_random_team()
-        # else:
-        #     self.pokemons
 
     def choose_action(self, opponent: Player) -> Action:
         available_pokemons = self.get_available_pokemons_for_change()
         if len(available_pokemons) == 0:
-            return Action.FIGHT
+            return self.pick_random_move_action()
         if random() < self.epsilon:
-            if random() < 0.5:
-                return Action.FIGHT
+            if random() < 0.7:
+                return self.pick_random_move_action()
             else:
-                return Action.CHANGE
+                return self.change_to_random_pokemon_action()
         action = self.model.predict([[*self.to_array(), *opponent.to_array()]])
         return Action(action[0].argmax())
 
     def choose_action_on_pokemon_dead(self, opponent: Player) -> Action:
-        return Action.CHANGE
+        if random() < self.epsilon:
+            return self.change_to_random_pokemon_action()
+        else:
+            action = self.model.predict([[*self.to_array(), *opponent.to_array()]])
+            # TODO: check this move is okay: not a move, and not a dead pokemon
+            return Action(action[0][6:].argmax())
+
+
+# TODO: create a team from neural network. How to do it???
+# Maybe we can calculate team's win rate and use it as learning data
+# if random() < EPSILON:
+#     self.pokemons = build_random_team()
+# else:
+#     self.pokemons
 
 
 class ValueFunctionAgent:
@@ -81,8 +104,8 @@ class ValueFunctionAgent:
                 max_iter=200,
             )
         self.epsilon = epsilon
-        fake_state = np.array([[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]])
-        fake_estimation = np.array([[0, 0]])
+        fake_state = np.array([np.zeros(6 * 6 * 2)])  # 6 pokemons, 6 moves, 2 players
+        fake_estimation = np.array([np.zeros(10)])  # change * 6, moves * 4
         self.model.partial_fit(fake_state, fake_estimation)
 
     def reset(self):
@@ -107,8 +130,14 @@ class ValueFunctionAgent:
 
 def build_random_team() -> list[p.Pokemon]:
     pokemons = [
-        p.Jolteon([m.Thunderbolt()]),
-        p.Rhydon([m.Earthquake()]),
-        p.Starmie([m.Surf()]),
+        p.Jolteon([m.Thunderbolt(), m.BodySlam(), m.DoubleKick(), m.HyperBeam()]),
+        p.Jolteon([m.Thunderbolt(), m.BodySlam(), m.DoubleKick(), m.HyperBeam()]),
+        p.Jolteon([m.Thunderbolt(), m.BodySlam(), m.DoubleKick(), m.HyperBeam()]),
+        p.Rhydon([m.Earthquake(), m.RockSlide(), m.HyperBeam(), m.BodySlam()]),
+        p.Rhydon([m.Earthquake(), m.RockSlide(), m.HyperBeam(), m.BodySlam()]),
+        p.Rhydon([m.Earthquake(), m.RockSlide(), m.HyperBeam(), m.BodySlam()]),
+        p.Starmie([m.Surf(), m.Blizzard(), m.HyperBeam(), m.Thunderbolt()]),
+        p.Starmie([m.Surf(), m.Blizzard(), m.HyperBeam(), m.Thunderbolt()]),
+        p.Starmie([m.Surf(), m.Blizzard(), m.HyperBeam(), m.Thunderbolt()]),
     ]
-    return sample(pokemons, 2)
+    return sample(pokemons, 6)
