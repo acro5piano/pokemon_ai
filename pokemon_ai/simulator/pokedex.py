@@ -5,6 +5,16 @@ import pokemon_ai.simulator.typechart as t
 from pokemon_ai.simulator.constant import LEVEL, MAX_DETERMINANT_VALUE
 
 
+def calculate_actual_hp(hp: int):
+    return (
+        floor(
+            ((hp + MAX_DETERMINANT_VALUE) * 2 + min(63, floor(floor(1 + 65535) / 4))) * LEVEL / 100
+        )
+        + LEVEL
+        + 10
+    )
+
+
 class Pokemon:
     id: int
     types: list[t.Type]
@@ -20,15 +30,7 @@ class Pokemon:
     actual_moves: list[m.Move]
 
     def __init__(self, moves: list[m.Move] = []):
-        self.actual_hp = (
-            floor(
-                ((self.hp + MAX_DETERMINANT_VALUE) * 2 + min(63, floor(floor(1 + 65535) / 4)))
-                * LEVEL
-                / 100
-            )
-            + LEVEL
-            + 10
-        )
+        self.actual_hp = calculate_actual_hp(self.hp)
         self.actual_moves = moves
 
     def __repr__(self) -> str:
