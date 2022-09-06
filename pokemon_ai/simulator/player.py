@@ -82,6 +82,11 @@ class Player:
     def get_available_pokemons_for_change(self) -> list[Pokemon]:
         return [p for p in self.pokemons if p.actual_hp > 0 and p != self.get_active_pokemon()]
 
+    def validate_change(self, new_active_index: int):
+        pokemon = self.pokemons[new_active_index]
+        if pokemon.actual_hp <= 0:
+            raise ValueError(f"Cannot change to dead pokemon {pokemon}")
+
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.pokemons} active:{self.active_pokemon_index})"
 

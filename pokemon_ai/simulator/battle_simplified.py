@@ -24,10 +24,12 @@ class Battle:
 
         if self.player1.get_active_pokemon().actual_hp <= 0:
             action = self.player1.choose_action_on_pokemon_dead(self.player2)
+            self.player1.validate_change(action.value)
             self.player1.active_pokemon_index = action.value
             return action, None
         if self.player2.get_active_pokemon().actual_hp <= 0:
             action = self.player2.choose_action_on_pokemon_dead(self.player1)
+            self.player2.validate_change(action.value)
             self.player2.active_pokemon_index = action.value
             return None, action
 
