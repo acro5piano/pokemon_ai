@@ -97,7 +97,6 @@ class Player:
         for index, _ in enumerate(array):
             if self.pokemons[index].actual_hp > 0 and self.active_pokemon_index != index:
                 array[index] = random()
-        print("shhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh")
         self.validate_change(int(np.array(array).argmax()))
         return int(np.array(array).argmax())
 
