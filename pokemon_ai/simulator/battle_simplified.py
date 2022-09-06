@@ -86,7 +86,7 @@ class Battle:
             return self.player1
 
     def __repr__(self) -> str:
-        return f"Battle({self.player1}, {self.player2})"
+        return f"Battle:\n  {self.player1}\n  {self.player2})"
 
     def validate(self):
         for Player in (self.player1, self.player2):

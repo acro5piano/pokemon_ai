@@ -88,7 +88,7 @@ class Player:
             raise ValueError(f"Cannot change to dead pokemon {pokemon}")
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}({self.pokemons} active:{self.active_pokemon_index})"
+        return f"{self.__class__.__name__}({self.pokemons} active:{self.get_active_pokemon()})"
 
     def to_array(self):
         list2d = [p.to_array() for p in self.pokemons]
