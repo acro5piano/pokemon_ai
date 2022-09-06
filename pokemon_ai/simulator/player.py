@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import itertools
 from enum import Enum
-from random import random
+from random import choice, random
 
 import numpy as np
 
@@ -97,14 +97,19 @@ class Player:
         for index, _ in enumerate(array):
             if self.pokemons[index].actual_hp > 0 and self.active_pokemon_index != index:
                 array[index] = random()
+        print("shhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh")
+        self.validate_change(int(np.array(array).argmax()))
         return int(np.array(array).argmax())
 
-    def get_random_living_pokemon_index(self) -> int:
-        array = [0.0 for _ in range(len(self.pokemons))]
-        for index, _ in enumerate(array):
-            if self.pokemons[index].actual_hp > 0:
-                array[index] = random()
-        return int(np.array(array).argmax())
+    def pick_random_move_action(self) -> Action:
+        return choice(
+            [
+                Action.MOVE_0,
+                Action.MOVE_1,
+                Action.MOVE_2,
+                Action.MOVE_3,
+            ]
+        )
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.pokemons} active:{self.get_active_pokemon()})"

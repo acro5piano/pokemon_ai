@@ -1,4 +1,4 @@
-from random import choice, random, sample
+from random import random, sample
 from typing import Optional
 
 import numpy as np
@@ -22,20 +22,10 @@ class StupidRandomPlayer(Player):
             return Action.change_to(self.get_random_living_pokemon_index_to_replace())
 
     def choose_action_on_pokemon_dead(self, _opponent: Player) -> Action:
-        return Action.change_to(self.get_random_living_pokemon_index())
-
-    def pick_random_move_action(self) -> Action:
-        return choice(
-            [
-                Action.MOVE_0,
-                Action.MOVE_1,
-                Action.MOVE_2,
-                Action.MOVE_3,
-            ]
-        )
+        return Action.change_to(self.get_random_living_pokemon_index_to_replace())
 
 
-class NeuralNetworkPlayer(StupidRandomPlayer):
+class NeuralNetworkPlayer(Player):
     model: MLPRegressor
     epsilon: float
 
@@ -58,18 +48,21 @@ class NeuralNetworkPlayer(StupidRandomPlayer):
             else:
                 return Action.change_to(self.get_random_living_pokemon_index_to_replace())
         predicts = self.model.predict([[*self.to_array(), *opponent.to_array()]])[0]
+        for index, _ in enumerate(predicts):
+            if index < 6:
+                if self.pokemons[index].actual_hp <= 0 or index == self.active_pokemon_index:
+                    predicts[index] = predicts.min() - 1
         return Action(predicts.argmax())
 
     def choose_action_on_pokemon_dead(self, opponent: Player) -> Action:
         if random() < self.epsilon:
-            return Action.change_to(self.get_random_living_pokemon_index())
+            return Action.change_to(self.get_random_living_pokemon_index_to_replace())
         else:
             predicts_arr = self.model.predict([[*self.to_array(), *opponent.to_array()]])
-            predicts = predicts_arr[0][:6]  # [:6] removes moves
-            for index in range(0, 6):
-                if self.pokemons[index].actual_hp <= 0:
+            predicts = predicts_arr[0][:6]  # [:6] removes skill moves
+            for index in range(0, len(self.pokemons)):
+                if self.pokemons[index].actual_hp <= 0 or index == self.active_pokemon_index:
                     predicts[index] = predicts.min() - 1
-            # TODO: check this move is okay: not a move, and not a dead pokemon
             return Action(predicts.argmax())
 
 

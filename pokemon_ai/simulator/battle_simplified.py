@@ -38,9 +38,11 @@ class Battle:
 
         # Handle pokemon change
         if action1.is_change():
+            self.player1.validate_change(action1.value)
             self.player1.active_pokemon_index = action1.value
             logging.info(f"{self.player1} changed their pokemon")
         if action2.is_change():
+            self.player2.validate_change(action2.value)
             self.player2.active_pokemon_index = action2.value
             logging.info(f"{self.player2} changed their pokemon")
 
