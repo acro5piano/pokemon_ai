@@ -34,3 +34,43 @@ class Thunderbolt(Move):
     acc = 100
     pp = 24
     type = t.Electric()
+
+
+class BodySlam(Move):
+    id = 4
+    bp = 85
+    acc = 100
+    pp = 24
+    type = t.Normal()
+
+
+class RockSlide(Move):
+    id = 5
+    bp = 75
+    acc = 90
+    pp = 16
+    type = t.Rock()
+
+
+class Blizzard(Move):
+    id = 6
+    bp = 120
+    acc = 90
+    pp = 8
+    type = t.Ice()
+
+
+class DoubleKick(Move):
+    id = 7
+    bp = 60
+    acc = 100
+    pp = 48
+    type = t.Fighting()
+
+
+class HyperBeam(Move):
+    id = 8
+    bp = 150
+    acc = 90
+    pp = 8
+    type = t.Normal()
