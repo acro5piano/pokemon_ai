@@ -115,4 +115,4 @@ class Player:
 
     def to_array(self):
         list2d = [p.to_array() for p in self.pokemons]
-        return list(itertools.chain(*list2d))
+        return [self.active_pokemon_index, *list(itertools.chain(*list2d))]

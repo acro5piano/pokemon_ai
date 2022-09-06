@@ -91,6 +91,7 @@ class ValueFunctionAgent:
             self.model = model
         else:
             self.model = MLPRegressor(
+                # hidden_layer_sizes=(100, 100),
                 hidden_layer_sizes=(10, 10),
                 max_iter=200,
             )
@@ -101,8 +102,12 @@ class ValueFunctionAgent:
 
     def reset(self):
         self.learner = NeuralNetworkPlayer(self.model, self.epsilon)
-        self.opponent = NeuralNetworkPlayer(self.model, self.epsilon)
-        # self.opponent = StupidRandomPlayer(build_random_team())
+        self.opponent = StupidRandomPlayer(build_random_team())
+
+        # TODO: Actually we want to use an opponent which is also a neural network,
+        # But it requires to change the simulator to support multiple neural network players
+        # Like symmetrical battle and reward should be calculated by both players
+        # self.opponent = NeuralNetworkPlayer(self.model, self.epsilon)
 
     def update(self, experiences: list[Experience]):
         states = np.array([e.state for e in experiences])
