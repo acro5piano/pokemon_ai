@@ -24,6 +24,7 @@ class StupidRandomPlayer(Player):
     def choose_action_on_pokemon_dead(self, _opponent: Player) -> Action:
         return self.change_to_random_pokemon_action()
 
+    # TODO: this is inefficient
     def change_to_random_pokemon_action(self) -> Action:
         for index, pokemon in enumerate(self.pokemons):
             if pokemon.actual_hp > 0 and random() < 0.2:
@@ -63,16 +64,20 @@ class NeuralNetworkPlayer(StupidRandomPlayer):
                 return self.pick_random_move_action()
             else:
                 return self.change_to_random_pokemon_action()
-        action = self.model.predict([[*self.to_array(), *opponent.to_array()]])
-        return Action(action[0].argmax())
+        predicts = self.model.predict([[*self.to_array(), *opponent.to_array()]])[0]
+        return Action(predicts.argmax())
 
     def choose_action_on_pokemon_dead(self, opponent: Player) -> Action:
         if random() < self.epsilon:
             return self.change_to_random_pokemon_action()
         else:
-            action = self.model.predict([[*self.to_array(), *opponent.to_array()]])
+            predicts_arr = self.model.predict([[*self.to_array(), *opponent.to_array()]])
+            predicts = predicts_arr[0][:6]  # [:6] removes moves
+            for index in range(0, 6):
+                if self.pokemons[index].actual_hp <= 0:
+                    predicts[index] = predicts.min() - 1
             # TODO: check this move is okay: not a move, and not a dead pokemon
-            return Action(action[0][6:].argmax())
+            return Action(predicts.argmax())
 
 
 # TODO: create a team from neural network. How to do it???
