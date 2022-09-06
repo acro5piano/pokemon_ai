@@ -101,7 +101,8 @@ class ValueFunctionAgent:
 
     def reset(self):
         self.learner = NeuralNetworkPlayer(self.model, self.epsilon)
-        self.opponent = StupidRandomPlayer(build_random_team())
+        self.opponent = NeuralNetworkPlayer(self.model, self.epsilon)
+        # self.opponent = StupidRandomPlayer(build_random_team())
 
     def update(self, experiences: list[Experience]):
         states = np.array([e.state for e in experiences])
