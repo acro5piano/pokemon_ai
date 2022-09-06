@@ -96,7 +96,9 @@ class ValueFunctionAgent:
                 max_iter=200,
             )
         self.epsilon = epsilon
-        fake_state = np.array([np.zeros(6 * 6 * 2)])  # 6 pokemons, 6 moves, 2 players
+        fake_state = np.array(
+            [np.zeros((1 + 6 * 6) * 2)]
+        )  # 1 active index, 6 pokemons, 6 moves, 2 players
         fake_estimation = np.array([np.zeros(10)])  # change * 6, moves * 4
         self.model.partial_fit(fake_state, fake_estimation)
 
