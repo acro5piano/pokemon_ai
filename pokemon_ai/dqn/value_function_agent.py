@@ -13,10 +13,18 @@ from pokemon_ai.simulator.player import Action, Player
 GAMMA = 0.9
 
 
+class JustAttackPlayer(Player):
+    def choose_action(self, _opponent: Player) -> Action:
+        return self.pick_random_move_action()
+
+    def choose_action_on_pokemon_dead(self, _opponent: Player) -> Action:
+        return Action.change_to(self.get_random_living_pokemon_index_to_replace())
+
+
 class StupidRandomPlayer(Player):
     def choose_action(self, _opponent: Player) -> Action:
         available_pokemons = self.get_available_pokemons_for_change()
-        if len(available_pokemons) == 0 or random() < 0.7:
+        if len(available_pokemons) == 0 or random() < 0.5:
             return self.pick_random_move_action()
         else:
             return Action.change_to(self.get_random_living_pokemon_index_to_replace())
@@ -91,7 +99,6 @@ class ValueFunctionAgent:
             self.model = model
         else:
             self.model = MLPRegressor(
-                # hidden_layer_sizes=(100, 100),
                 hidden_layer_sizes=(10, 10),
                 max_iter=200,
             )
@@ -104,7 +111,8 @@ class ValueFunctionAgent:
 
     def reset(self):
         self.learner = NeuralNetworkPlayer(self.model, self.epsilon)
-        self.opponent = StupidRandomPlayer(build_random_team())
+        # self.opponent = StupidRandomPlayer(build_random_team())
+        self.opponent = JustAttackPlayer(build_random_team())
 
         # TODO: Actually we want to use an opponent which is also a neural network,
         # But it requires to change the simulator to support multiple neural network players
