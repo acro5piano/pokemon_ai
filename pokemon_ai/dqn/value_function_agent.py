@@ -7,30 +7,11 @@ from sklearn.neural_network import MLPRegressor
 import pokemon_ai.simulator.moves as m
 import pokemon_ai.simulator.pokedex as p
 from pokemon_ai.dqn.experience import Experience
+from pokemon_ai.dqn.opponents import JustAttackPlayer
 from pokemon_ai.simulator.battle_simplified import Battle
 from pokemon_ai.simulator.player import Action, Player
 
 GAMMA = 0.9
-
-
-class JustAttackPlayer(Player):
-    def choose_action(self, _opponent: Player) -> Action:
-        return self.pick_random_move_action()
-
-    def choose_action_on_pokemon_dead(self, _opponent: Player) -> Action:
-        return Action.change_to(self.get_random_living_pokemon_index_to_replace())
-
-
-class StupidRandomPlayer(Player):
-    def choose_action(self, _opponent: Player) -> Action:
-        available_pokemons = self.get_available_pokemons_for_change()
-        if len(available_pokemons) == 0 or random() < 0.5:
-            return self.pick_random_move_action()
-        else:
-            return Action.change_to(self.get_random_living_pokemon_index_to_replace())
-
-    def choose_action_on_pokemon_dead(self, _opponent: Player) -> Action:
-        return Action.change_to(self.get_random_living_pokemon_index_to_replace())
 
 
 class NeuralNetworkPlayer(Player):
@@ -39,11 +20,12 @@ class NeuralNetworkPlayer(Player):
 
     def __init__(
         self,
+        pokemons: list[p.Pokemon],
         model: MLPRegressor,
         epsilon: float,
     ):
+        self.pokemons = pokemons
         self.model = model
-        self.pokemons = build_random_team()
         self.epsilon = epsilon
 
     def choose_action(self, opponent: Player) -> Action:
@@ -110,7 +92,7 @@ class ValueFunctionAgent:
         self.model.partial_fit(fake_state, fake_estimation)
 
     def reset(self):
-        self.learner = NeuralNetworkPlayer(self.model, self.epsilon)
+        self.learner = NeuralNetworkPlayer(build_random_team(), self.model, self.epsilon)
         # self.opponent = StupidRandomPlayer(build_random_team())
         self.opponent = JustAttackPlayer(build_random_team())
 
