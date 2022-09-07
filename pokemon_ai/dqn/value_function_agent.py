@@ -1,3 +1,4 @@
+import logging
 from random import random, sample
 from typing import Optional
 
@@ -33,7 +34,7 @@ class NeuralNetworkPlayer(Player):
         if len(available_pokemons) == 0:
             return self.pick_random_move_action()
         if random() < self.epsilon:
-            if random() < 0.7:
+            if random() < 0.5:
                 return self.pick_random_move_action()
             else:
                 return Action.change_to(self.get_random_living_pokemon_index_to_replace())
@@ -42,6 +43,7 @@ class NeuralNetworkPlayer(Player):
             if index < 6:
                 if self.pokemons[index].actual_hp <= 0 or index == self.active_pokemon_index:
                     predicts[index] = predicts.min() - 1
+        logging.info(f"predictions:\n{predicts}")
         return Action(predicts.argmax())
 
     def choose_action_on_pokemon_dead(self, opponent: Player) -> Action:
@@ -53,6 +55,7 @@ class NeuralNetworkPlayer(Player):
             for index in range(0, len(self.pokemons)):
                 if self.pokemons[index].actual_hp <= 0 or index == self.active_pokemon_index:
                     predicts[index] = predicts.min() - 1
+            logging.info(f"predictions:\n{predicts}")
             return Action(predicts.argmax())
 
 
@@ -92,9 +95,31 @@ class ValueFunctionAgent:
         self.model.partial_fit(fake_state, fake_estimation)
 
     def reset(self):
-        self.learner = NeuralNetworkPlayer(build_random_team(), self.model, self.epsilon)
+        self.learner = NeuralNetworkPlayer(
+            [
+                p.Jolteon([m.Thunderbolt(), m.BodySlam(), m.DoubleKick(), m.PinMissle()]),
+                p.Starmie([m.Surf(), m.Blizzard(), m.Psychic(), m.Thunderbolt()]),
+                p.Jolteon([m.Thunderbolt(), m.BodySlam(), m.DoubleKick(), m.PinMissle()]),
+                p.Rhydon([m.Earthquake(), m.RockSlide(), m.Surf(), m.BodySlam()]),
+                p.Starmie([m.Surf(), m.Blizzard(), m.Psychic(), m.Thunderbolt()]),
+                p.Starmie([m.Surf(), m.Blizzard(), m.Psychic(), m.Thunderbolt()]),
+            ],
+            self.model,
+            self.epsilon,
+        )
+
         # self.opponent = StupidRandomPlayer(build_random_team())
-        self.opponent = JustAttackPlayer(build_random_team())
+
+        self.opponent = JustAttackPlayer(
+            [
+                p.Rhydon([m.Earthquake(), m.RockSlide(), m.Surf(), m.BodySlam()]),
+                p.Rhydon([m.Earthquake(), m.RockSlide(), m.Surf(), m.BodySlam()]),
+                p.Starmie([m.Surf(), m.Blizzard(), m.Psychic(), m.Thunderbolt()]),
+                p.Jolteon([m.Thunderbolt(), m.BodySlam(), m.DoubleKick(), m.PinMissle()]),
+                p.Jolteon([m.Thunderbolt(), m.BodySlam(), m.DoubleKick(), m.PinMissle()]),
+                p.Starmie([m.Surf(), m.Blizzard(), m.Psychic(), m.Thunderbolt()]),
+            ]
+        )
 
         # TODO: Actually we want to use an opponent which is also a neural network,
         # But it requires to change the simulator to support multiple neural network players
