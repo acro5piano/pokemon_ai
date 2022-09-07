@@ -19,6 +19,11 @@ def to_real_value(stat: int) -> int:
 
 
 def calculate_damage(attacker: Pokemon, defender: Pokemon, move: Move) -> int:
+    is_miss = (move.acc / 100) - (1 / 256) < random()  # in gen1, minimum miss rate is 1/256
+    if is_miss:
+        logging.info("The attack missed!")
+        return 0
+
     is_critical_hit = random() < (attacker.spe / 512)
     if is_critical_hit:
         logging.info("a critical hit!")
@@ -44,7 +49,6 @@ def calculate_damage(attacker: Pokemon, defender: Pokemon, move: Move) -> int:
     for attacker_type in attacker.types:
         if attacker_type == move.type:
             modifier *= 1.5
-            logging.info("STAB attack!")
 
     modifier *= randint(217, 255) / 255
 

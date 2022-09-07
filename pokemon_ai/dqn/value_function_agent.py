@@ -1,6 +1,4 @@
 import logging
-from collections import deque
-from dataclasses import dataclass
 from random import random, sample
 from typing import Optional
 
@@ -9,38 +7,12 @@ from sklearn.neural_network import MLPRegressor
 
 import pokemon_ai.simulator.moves as m
 import pokemon_ai.simulator.pokedex as p
-from pokemon_ai.simulator.battle_simplified import Battle
+from pokemon_ai.dqn.experience import Experience
+from pokemon_ai.simulator.battle import Battle
 from pokemon_ai.simulator.player import Action, Player
-
-# from sklearn.pipeline import Pipeline
-# from sklearn.preprocessing import StandardScaler
-
+from pokemon_ai.simulator.sample_players import JustAttackPlayer
 
 GAMMA = 0.9
-
-
-# TODO: use dataclass
-# Experience = namedtuple("Experience", ["state", "action", "reward", "next_state", "done"])
-
-
-@dataclass
-class Experience:
-    state: list[int]
-    action: Action
-    reward: float
-    next_state: list[int]
-    done: bool
-
-
-class StupidRandomPlayer(Player):
-    def choose_action(self, opponent: Player) -> Action:
-        available_pokemons = self.get_available_pokemons_for_change()
-        if len(available_pokemons) == 0:
-            return Action.FIGHT
-        if random() < 0.5:
-            return Action.FIGHT
-        else:
-            return Action.CHANGE
 
 
 class NeuralNetworkPlayer(Player):
@@ -49,34 +21,50 @@ class NeuralNetworkPlayer(Player):
 
     def __init__(
         self,
+        pokemons: list[p.Pokemon],
         model: MLPRegressor,
         epsilon: float,
     ):
+        self.pokemons = pokemons
         self.model = model
-        self.pokemons = build_random_team()
         self.epsilon = epsilon
-        # TODO: create a team from neural network. How to do it???
-        # Maybe we can calculate team's win rate and use it as learning data
-
-        # if random() < EPSILON:
-        #     self.pokemons = build_random_team()
-        # else:
-        #     self.pokemons
 
     def choose_action(self, opponent: Player) -> Action:
         available_pokemons = self.get_available_pokemons_for_change()
         if len(available_pokemons) == 0:
-            return Action.FIGHT
+            return self.pick_random_move_action()
         if random() < self.epsilon:
             if random() < 0.5:
-                return Action.FIGHT
+                return self.pick_random_move_action()
             else:
-                return Action.CHANGE
-        action = self.model.predict([[*self.to_array(), *opponent.to_array()]])
-        return Action(action[0].argmax())
+                return Action.change_to(self.get_random_living_pokemon_index_to_replace())
+        predicts = self.model.predict([[*self.to_array(), *opponent.to_array()]])[0]
+        for index, _ in enumerate(predicts):
+            if index < 6:
+                if self.pokemons[index].actual_hp <= 0 or index == self.active_pokemon_index:
+                    predicts[index] = predicts.min() - 1
+        logging.info(f"predictions:\n{predicts}")
+        return Action(predicts.argmax())
 
     def choose_action_on_pokemon_dead(self, opponent: Player) -> Action:
-        return Action.CHANGE
+        if random() < self.epsilon:
+            return Action.change_to(self.get_random_living_pokemon_index_to_replace())
+        else:
+            predicts_arr = self.model.predict([[*self.to_array(), *opponent.to_array()]])
+            predicts = predicts_arr[0][:6]  # [:6] removes skill moves
+            for index in range(0, len(self.pokemons)):
+                if self.pokemons[index].actual_hp <= 0 or index == self.active_pokemon_index:
+                    predicts[index] = predicts.min() - 1
+            logging.info(f"predictions:\n{predicts}")
+            return Action(predicts.argmax())
+
+
+# TODO: create a team from neural network. How to do it???
+# Maybe we can calculate team's win rate and use it as learning data
+# if random() < EPSILON:
+#     self.pokemons = build_random_team()
+# else:
+#     self.pokemons
 
 
 class ValueFunctionAgent:
@@ -100,13 +88,85 @@ class ValueFunctionAgent:
                 max_iter=200,
             )
         self.epsilon = epsilon
-        fake_state = np.array([[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]])
-        fake_estimation = np.array([[0, 0]])
+        fake_state = np.array(
+            [np.zeros((1 + 6 * 6) * 2)]
+        )  # 1 active index, 6 pokemons, 6 moves, 2 players
+        fake_estimation = np.array([np.zeros(10)])  # change * 6, moves * 4
         self.model.partial_fit(fake_state, fake_estimation)
 
     def reset(self):
-        self.learner = NeuralNetworkPlayer(self.model, self.epsilon)
-        self.opponent = StupidRandomPlayer(build_random_team())
+        self.learner = NeuralNetworkPlayer(
+            [
+                p.Jolteon(
+                    [
+                        m.BodySlam(),
+                        m.DoubleKick(),
+                        m.PinMissle(),
+                        m.Thunderbolt(),
+                    ]
+                ),
+                p.Starmie(
+                    [
+                        m.Blizzard(),
+                        m.Psychic(),
+                        m.Thunderbolt(),
+                        m.Surf(),
+                    ]
+                ),
+                p.Jolteon(
+                    [
+                        m.BodySlam(),
+                        m.DoubleKick(),
+                        m.PinMissle(),
+                        m.Thunderbolt(),
+                    ]
+                ),
+                p.Rhydon(
+                    [
+                        m.RockSlide(),
+                        m.Surf(),
+                        m.BodySlam(),
+                        m.Earthquake(),
+                    ]
+                ),
+                p.Starmie(
+                    [
+                        m.Blizzard(),
+                        m.Psychic(),
+                        m.Thunderbolt(),
+                        m.Surf(),
+                    ]
+                ),
+                p.Starmie(
+                    [
+                        m.Blizzard(),
+                        m.Psychic(),
+                        m.Thunderbolt(),
+                        m.Surf(),
+                    ]
+                ),
+            ],
+            self.model,
+            self.epsilon,
+        )
+
+        # self.opponent = StupidRandomPlayer(build_random_team())
+
+        self.opponent = JustAttackPlayer(
+            [
+                p.Rhydon([m.Earthquake(), m.RockSlide(), m.Surf(), m.BodySlam()]),
+                p.Rhydon([m.Earthquake(), m.RockSlide(), m.Surf(), m.BodySlam()]),
+                p.Starmie([m.Surf(), m.Blizzard(), m.Psychic(), m.Thunderbolt()]),
+                p.Jolteon([m.Thunderbolt(), m.BodySlam(), m.DoubleKick(), m.PinMissle()]),
+                p.Jolteon([m.Thunderbolt(), m.BodySlam(), m.DoubleKick(), m.PinMissle()]),
+                p.Starmie([m.Surf(), m.Blizzard(), m.Psychic(), m.Thunderbolt()]),
+            ]
+        )
+
+        # TODO: Actually we want to use an opponent which is also a neural network,
+        # But it requires to change the simulator to support multiple neural network players
+        # Like symmetrical battle and reward should be calculated by both players
+        # self.opponent = NeuralNetworkPlayer(self.model, self.epsilon)
 
     def update(self, experiences: list[Experience]):
         states = np.array([e.state for e in experiences])
@@ -126,81 +186,14 @@ class ValueFunctionAgent:
 
 def build_random_team() -> list[p.Pokemon]:
     pokemons = [
-        p.Jolteon([m.Thunderbolt()]),
-        p.Rhydon([m.Earthquake()]),
-        p.Starmie([m.Surf()]),
+        p.Jolteon([m.Thunderbolt(), m.BodySlam(), m.DoubleKick(), m.PinMissle()]),
+        p.Jolteon([m.Thunderbolt(), m.BodySlam(), m.DoubleKick(), m.PinMissle()]),
+        p.Jolteon([m.Thunderbolt(), m.BodySlam(), m.DoubleKick(), m.PinMissle()]),
+        p.Rhydon([m.Earthquake(), m.RockSlide(), m.Surf(), m.BodySlam()]),
+        p.Rhydon([m.Earthquake(), m.RockSlide(), m.Surf(), m.BodySlam()]),
+        p.Rhydon([m.Earthquake(), m.RockSlide(), m.Surf(), m.BodySlam()]),
+        p.Starmie([m.Surf(), m.Blizzard(), m.Psychic(), m.Thunderbolt()]),
+        p.Starmie([m.Surf(), m.Blizzard(), m.Psychic(), m.Thunderbolt()]),
+        p.Starmie([m.Surf(), m.Blizzard(), m.Psychic(), m.Thunderbolt()]),
     ]
-    return sample(pokemons, 2)
-
-
-class Trainer:
-    step = 0
-    experiences = deque(maxlen=1024)
-
-    def __init__(self, episodes: int, model: Optional[MLPRegressor] = None, epsilon: float = 0.2):
-        self.agent = ValueFunctionAgent(model=model, epsilon=epsilon)
-        self.episodes = episodes
-
-    def train(self):
-        win_count_total = 0
-        win_count_of_100 = 0
-        for episode in range(0, self.episodes):
-            self.agent.reset()
-            battle = Battle(self.agent.learner, self.agent.opponent)
-            battle.validate()
-            logging.info(battle)
-            while True:
-                logging.info(f"=== turn {battle.turn} ===")
-                current_state = battle.to_array()
-
-                current_learner_pokemon_count = len(battle.player1.get_available_pokemons())
-                current_opponent_pokemon_count = len(battle.player2.get_available_pokemons())
-
-                action, _ = battle.forward_step()
-                winner = battle.get_winner()
-
-                next_learner_pokemon_count = len(battle.player1.get_available_pokemons())
-                next_opponent_pokemon_count = len(battle.player2.get_available_pokemons())
-
-                if action is not None:
-                    reward = 0
-                    if winner == self.agent.learner:
-                        logging.info(f"learner won the battle!")
-                        reward = 1
-                    if winner == self.agent.opponent:
-                        logging.info(f"learner lost...")
-                        reward = -1
-                    if battle.turn > 500:
-                        logging.info("battle is too long")
-                        reward = -0.1
-                    if current_opponent_pokemon_count > next_opponent_pokemon_count:
-                        reward += 0.3
-                    if current_learner_pokemon_count > next_learner_pokemon_count:
-                        reward -= 0.3
-                    self.experiences.append(
-                        Experience(
-                            state=current_state,
-                            action=action,
-                            reward=reward,
-                            next_state=battle.to_array(),
-                            done=winner is not None,
-                        )
-                    )
-                self.step += 1
-                logging.info(battle)
-                if winner is not None or battle.turn > 500:
-                    if winner == self.agent.learner:
-                        win_count_total += 1
-                        win_count_of_100 += 1
-                    break
-            if len(self.experiences) > 64:
-                self.agent.update(sample(self.experiences, 64))
-            if episode > 0 and episode % 100 == 0:
-                print(f"=============")
-                print(f"episode {episode}")
-                print(f"Win Rate of 100: {win_count_of_100 / 100}")
-                print(f"Total Win Rate: {win_count_total / episode}")
-                win_count_of_100 = 0
-        print(f"=======================================")
-        print(f"Total Win Count: {win_count_total}")
-        print(f"Total Win Rate: {win_count_total / self.episodes}")
+    return sample(pokemons, 6)

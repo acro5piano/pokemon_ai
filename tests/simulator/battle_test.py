@@ -33,12 +33,3 @@ def test_battle_just_change():
     battle = Battle(player1, player2)
     with pytest.raises(Exception):
         battle.run()
-
-
-def test_battle_just_battle_and_change():
-    seed(42)
-    player1 = JustChangePlayer([p.Rhydon([m.Earthquake()]), p.Jolteon([m.Thunderbolt()])])
-    player2 = JustAttackPlayer([p.Starmie([m.Surf()]), p.Jolteon([m.Thunderbolt()])])
-    battle = Battle(player1, player2)
-    winner = battle.run()
-    assert winner == player2
