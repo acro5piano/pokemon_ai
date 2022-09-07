@@ -1,8 +1,9 @@
 import logging
 from random import random, sample
-from typing import Optional
+from typing import Any, Optional
 
 import numpy as np
+import tensorflow as tf
 from sklearn.neural_network import MLPRegressor
 
 import pokemon_ai.simulator.moves as m
@@ -13,6 +14,12 @@ from pokemon_ai.simulator.battle_simplified import Battle
 from pokemon_ai.simulator.player import Action, Player
 
 GAMMA = 0.9
+
+SHAPE = (37, 2, 1)
+
+
+def reshape_states(states: np.ndarray) -> np.ndarray:
+    return np.array([state.reshape(SHAPE) for state in states])
 
 
 class NeuralNetworkPlayer(Player):
@@ -38,7 +45,8 @@ class NeuralNetworkPlayer(Player):
                 return self.pick_random_move_action()
             else:
                 return Action.change_to(self.get_random_living_pokemon_index_to_replace())
-        predicts = self.model.predict([[*self.to_array(), *opponent.to_array()]])[0]
+        X = reshape_states(np.array([[*self.to_array(), *opponent.to_array()]]))
+        predicts = self.model.predict(X)[0]
         for index, _ in enumerate(predicts):
             if index < 6:
                 if self.pokemons[index].actual_hp <= 0 or index == self.active_pokemon_index:
@@ -50,7 +58,8 @@ class NeuralNetworkPlayer(Player):
         if random() < self.epsilon:
             return Action.change_to(self.get_random_living_pokemon_index_to_replace())
         else:
-            predicts_arr = self.model.predict([[*self.to_array(), *opponent.to_array()]])
+            X = reshape_states(np.array([[*self.to_array(), *opponent.to_array()]]))
+            predicts_arr = self.model.predict(X)
             predicts = predicts_arr[0][:6]  # [:6] removes skill moves
             for index in range(0, len(self.pokemons)):
                 if self.pokemons[index].actual_hp <= 0 or index == self.active_pokemon_index:
@@ -69,7 +78,7 @@ class NeuralNetworkPlayer(Player):
 
 class ValueFunctionAgent:
     # model: Pipeline
-    model: MLPRegressor
+    model: Any
     battle: Battle
     learner: Player
     opponent: Player
@@ -83,16 +92,30 @@ class ValueFunctionAgent:
         if model:
             self.model = model
         else:
-            self.model = MLPRegressor(
-                hidden_layer_sizes=(10, 10),
-                max_iter=200,
+            cnn = tf.keras.Sequential(
+                [
+                    tf.keras.layers.Conv2D(
+                        5,
+                        kernel_size=3,
+                        strides=1,
+                        padding="same",
+                        activation="relu",
+                        input_shape=SHAPE,
+                    ),
+                    tf.keras.layers.Conv2D(
+                        3,
+                        kernel_size=2,
+                        strides=1,
+                        padding="same",
+                        activation="relu",
+                    ),
+                    tf.keras.layers.Flatten(),
+                    tf.keras.layers.Dense(units=10, activation="softmax"),
+                ]
             )
+            cnn.compile(optimizer="sgd", loss="categorical_crossentropy")
+            self.model = cnn
         self.epsilon = epsilon
-        fake_state = np.array(
-            [np.zeros((1 + 6 * 6) * 2)]
-        )  # 1 active index, 6 pokemons, 6 moves, 2 players
-        fake_estimation = np.array([np.zeros(10)])  # change * 6, moves * 4
-        self.model.partial_fit(fake_state, fake_estimation)
 
     def reset(self):
         self.learner = NeuralNetworkPlayer(
@@ -130,8 +153,8 @@ class ValueFunctionAgent:
         states = np.array([e.state for e in experiences])
         next_states = np.array([e.next_state for e in experiences])
 
-        y = self.model.predict(states)
-        future = self.model.predict(next_states)
+        y = self.model.predict(reshape_states(states))
+        future = self.model.predict(reshape_states(next_states))
 
         for i, experience in enumerate(experiences):
             reward = experience.reward
@@ -139,7 +162,8 @@ class ValueFunctionAgent:
                 reward += GAMMA * np.max(future[i])
             y[i][experience.action.value] = reward
 
-        self.model.partial_fit(states, y)
+        X = np.array([state.reshape(SHAPE) for state in states])
+        self.model.train_on_batch(X, y)
 
 
 def build_random_team() -> list[p.Pokemon]:
