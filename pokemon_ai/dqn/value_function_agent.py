@@ -97,12 +97,54 @@ class ValueFunctionAgent:
     def reset(self):
         self.learner = NeuralNetworkPlayer(
             [
-                p.Jolteon([m.Thunderbolt(), m.BodySlam(), m.DoubleKick(), m.PinMissle()]),
-                p.Starmie([m.Surf(), m.Blizzard(), m.Psychic(), m.Thunderbolt()]),
-                p.Jolteon([m.Thunderbolt(), m.BodySlam(), m.DoubleKick(), m.PinMissle()]),
-                p.Rhydon([m.Earthquake(), m.RockSlide(), m.Surf(), m.BodySlam()]),
-                p.Starmie([m.Surf(), m.Blizzard(), m.Psychic(), m.Thunderbolt()]),
-                p.Starmie([m.Surf(), m.Blizzard(), m.Psychic(), m.Thunderbolt()]),
+                p.Jolteon(
+                    [
+                        m.BodySlam(),
+                        m.DoubleKick(),
+                        m.PinMissle(),
+                        m.Thunderbolt(),
+                    ]
+                ),
+                p.Starmie(
+                    [
+                        m.Blizzard(),
+                        m.Psychic(),
+                        m.Thunderbolt(),
+                        m.Surf(),
+                    ]
+                ),
+                p.Jolteon(
+                    [
+                        m.BodySlam(),
+                        m.DoubleKick(),
+                        m.PinMissle(),
+                        m.Thunderbolt(),
+                    ]
+                ),
+                p.Rhydon(
+                    [
+                        m.RockSlide(),
+                        m.Surf(),
+                        m.BodySlam(),
+                        m.Earthquake(),
+                    ]
+                ),
+                p.Starmie(
+                    [
+                        m.Blizzard(),
+                        m.Psychic(),
+                        m.Thunderbolt(),
+                        m.Surf(),
+                    ]
+                ),
+                p.Starmie(
+                    [
+                        m.Blizzard(),
+                        m.Psychic(),
+                        m.Thunderbolt(),
+                        m.Surf(),
+                    ]
+                ),
             ],
             self.model,
             self.epsilon,
