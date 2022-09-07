@@ -8,9 +8,9 @@ from sklearn.neural_network import MLPRegressor
 import pokemon_ai.simulator.moves as m
 import pokemon_ai.simulator.pokedex as p
 from pokemon_ai.dqn.experience import Experience
-from pokemon_ai.dqn.opponents import JustAttackPlayer
-from pokemon_ai.simulator.battle_simplified import Battle
+from pokemon_ai.simulator.battle import Battle
 from pokemon_ai.simulator.player import Action, Player
+from pokemon_ai.simulator.sample_players import JustAttackPlayer
 
 GAMMA = 0.9
 

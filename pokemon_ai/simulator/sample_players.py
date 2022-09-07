@@ -1,42 +1,34 @@
-from __future__ import annotations
-
 from random import random
 
-from pokemon_ai.simulator.player import Action, ActionChangeTo, ActionSelectMove, Player
-
-
-class JustAttackPlayer(Player):
-    def choose_action(self, opponent: Player) -> Action:
-        player_pokemon = self.get_active_pokemon()
-        return ActionSelectMove(player_pokemon.actual_moves[0])
-
-    def choose_action_on_pokemon_dead(self, opponent: Player) -> ActionChangeTo:
-        return ActionChangeTo(self.get_available_pokemons()[0])
+from pokemon_ai.simulator.player import Action, Player
 
 
 class JustChangePlayer(Player):
-    def choose_action(self, opponent: Player) -> Action:
+    def choose_action(self, _opponent: Player) -> Action:
         available_pokemons = self.get_available_pokemons_for_change()
         if len(available_pokemons) == 0:
-            return ActionSelectMove(self.get_active_pokemon().actual_moves[0])
-        else:
-            return ActionChangeTo(self.get_available_pokemons_for_change()[0])
+            return self.pick_random_move_action()
+        return Action.change_to(self.get_random_living_pokemon_index_to_replace())
 
-    def choose_action_on_pokemon_dead(self, opponent: Player) -> ActionChangeTo:
-        return ActionChangeTo(self.get_available_pokemons()[0])
+    def choose_action_on_pokemon_dead(self, _opponent: Player) -> Action:
+        return Action.change_to(self.get_random_living_pokemon_index_to_replace())
+
+
+class JustAttackPlayer(Player):
+    def choose_action(self, _opponent: Player) -> Action:
+        return self.pick_random_move_action()
+
+    def choose_action_on_pokemon_dead(self, _opponent: Player) -> Action:
+        return Action.change_to(self.get_random_living_pokemon_index_to_replace())
 
 
 class StupidRandomPlayer(Player):
-    def choose_action(self, opponent: Player) -> Action:
+    def choose_action(self, _opponent: Player) -> Action:
         available_pokemons = self.get_available_pokemons_for_change()
-        if len(available_pokemons) == 0:
-            return ActionSelectMove(self.get_active_pokemon().actual_moves[0])
-        if random() < 0.5:
-            return ActionSelectMove(self.get_active_pokemon().actual_moves[0])
+        if len(available_pokemons) == 0 or random() < 0.5:
+            return self.pick_random_move_action()
         else:
-            return ActionChangeTo(available_pokemons[0])
+            return Action.change_to(self.get_random_living_pokemon_index_to_replace())
 
-    def choose_action_on_pokemon_dead(self, opponent: Player) -> ActionChangeTo:
-        # TODO: support pokemon num > 2
-        # available_pokemons = self.get_available_pokemons()
-        return ActionChangeTo(self.get_available_pokemons()[0])
+    def choose_action_on_pokemon_dead(self, _opponent: Player) -> Action:
+        return Action.change_to(self.get_random_living_pokemon_index_to_replace())

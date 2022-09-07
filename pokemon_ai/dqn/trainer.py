@@ -7,7 +7,7 @@ from sklearn.neural_network import MLPRegressor
 
 from pokemon_ai.dqn.experience import Experience
 from pokemon_ai.dqn.value_function_agent import ValueFunctionAgent
-from pokemon_ai.simulator.battle_simplified import Battle
+from pokemon_ai.simulator.battle import Battle
 
 
 class Trainer:
