@@ -96,7 +96,7 @@ class ValueFunctionAgent:
         fake_estimation = np.array([np.zeros(10)])  # change * 6, moves * 4
         self.model.partial_fit(fake_state, fake_estimation)
 
-    def reset(self):
+    def reset(self, max_episodes: int, episodes: int):
         self.learner = NeuralNetworkPlayer(
             [
                 # p.Starmie([m.Surf(), m.Blizzard(), m.Psychic(), m.Thunderbolt()]),
@@ -107,13 +107,22 @@ class ValueFunctionAgent:
             self.epsilon,
         )
 
-        self.opponent = JustAttackPlayer(
-            [
-                # p.Starmie([m.Surf(), m.Blizzard(), m.Psychic(), m.Thunderbolt()]),
-                p.Jolteon([m.Thunderbolt(), m.BodySlam(), m.DoubleKick(), m.PinMissle()]),
-                # p.Rhydon([m.Earthquake(), m.RockSlide(), m.Surf(), m.BodySlam()]),
-            ]
-        )
+        if episodes / max_episodes < random():
+            self.opponent = JustAttackPlayer(
+                [
+                    # p.Starmie([m.Surf(), m.Blizzard(), m.Psychic(), m.Thunderbolt()]),
+                    # p.Jolteon([m.Thunderbolt(), m.BodySlam(), m.DoubleKick(), m.PinMissle()]),
+                    p.Rhydon([m.Surf(), m.Surf(), m.Surf(), m.Surf()])
+                ]
+            )
+        else:
+            self.opponent = JustAttackPlayer(
+                [
+                    # p.Starmie([m.Surf(), m.Blizzard(), m.Psychic(), m.Thunderbolt()]),
+                    # p.Jolteon([m.Thunderbolt(), m.BodySlam(), m.DoubleKick(), m.PinMissle()]),
+                    p.Rhydon([m.Earthquake(), m.RockSlide(), m.Surf(), m.BodySlam()]),
+                ]
+            )
 
         # TODO: Actually we want to use an opponent which is also a neural network,
         # But it requires to change the simulator to support multiple neural network players

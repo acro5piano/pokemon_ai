@@ -1,6 +1,5 @@
 import logging
 from collections import deque
-from copy import deepcopy
 from random import sample
 from typing import Optional
 
@@ -23,7 +22,7 @@ class Trainer:
         win_count_total = 0
         win_count_of_100 = 0
         for episode in range(0, self.episodes):
-            self.agent.reset()
+            self.agent.reset(self.episodes, episode)
             battle = Battle(self.agent.learner, self.agent.opponent)
             battle.validate()
             logging.info(battle)
@@ -81,3 +80,5 @@ class Trainer:
         print(f"=======================================")
         print(f"Total Win Count: {win_count_total}")
         print(f"Total Win Rate: {win_count_total / self.episodes}")
+        print(f"Total steps : {self.step}")
+        print(f"Total episodes : {self.episodes}")
