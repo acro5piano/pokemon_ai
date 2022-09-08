@@ -109,7 +109,7 @@ class Battle:
                 raise Exception("Battle is too long")
             logging.info(self)
 
-    def to_array(self):
+    def to_array(self) -> list[float]:
         return [*self.player1.to_array(), *self.player2.to_array()]
 
 

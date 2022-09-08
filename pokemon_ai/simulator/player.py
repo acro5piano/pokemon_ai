@@ -113,6 +113,6 @@ class Player:
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.pokemons} active:{self.get_active_pokemon()})"
 
-    def to_array(self):
+    def to_array(self) -> list[float]:
         list2d = [p.to_array() for p in self.pokemons]
         return [self.active_pokemon_index, *list(itertools.chain(*list2d))]

@@ -5,8 +5,8 @@ from pokemon_ai.simulator.player import Action
 
 @dataclass
 class Experience:
-    state: list[int]
+    state: list[float]
     action: Action
     reward: float
-    next_state: list[int]
+    next_state: list[float]
     done: bool

@@ -1,5 +1,6 @@
 import logging
 from collections import deque
+from copy import deepcopy
 from random import sample
 from typing import Optional
 
@@ -28,10 +29,9 @@ class Trainer:
             logging.info(battle)
             while True:
                 logging.info(f"=== turn {battle.turn} ===")
-                current_state = battle.to_array()
-
-                current_learner_pokemon_count = len(battle.player1.get_available_pokemons())
-                current_opponent_pokemon_count = len(battle.player2.get_available_pokemons())
+                prev_state = battle.to_array()
+                prev_learner_pokemon_count = len(battle.player1.get_available_pokemons())
+                prev_opponent_pokemon_count = len(battle.player2.get_available_pokemons())
 
                 action, _ = battle.forward_step()
                 winner = battle.get_winner()
@@ -50,13 +50,13 @@ class Trainer:
                     if battle.turn > 500:
                         logging.info("battle is too long")
                         reward = -0.1
-                    if current_opponent_pokemon_count > next_opponent_pokemon_count:
+                    if prev_opponent_pokemon_count > next_opponent_pokemon_count:
                         reward += 0.3
-                    if current_learner_pokemon_count > next_learner_pokemon_count:
+                    if prev_learner_pokemon_count > next_learner_pokemon_count:
                         reward -= 0.3
                     self.experiences.append(
                         Experience(
-                            state=current_state,
+                            state=prev_state,
                             action=action,
                             reward=reward,
                             next_state=battle.to_array(),

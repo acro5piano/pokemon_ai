@@ -31,18 +31,18 @@ class NeuralNetworkPlayer(Player):
 
     def choose_action(self, opponent: Player) -> Action:
         available_pokemons = self.get_available_pokemons_for_change()
-        if len(available_pokemons) == 0:
-            return self.pick_random_move_action()
         if random() < self.epsilon:
-            if random() < 0.5:
+            if len(available_pokemons) == 0 or random() < 0.5:
                 return self.pick_random_move_action()
             else:
                 return Action.change_to(self.get_random_living_pokemon_index_to_replace())
         predicts = self.model.predict([[*self.to_array(), *opponent.to_array()]])[0]
         for index, _ in enumerate(predicts):
             if index < 6:
-                if self.pokemons[index].actual_hp <= 0 or index == self.active_pokemon_index:
-                    predicts[index] = predicts.min() - 1
+                predicts[index] = predicts.min() - 1
+                # TODO: restore this
+                # if self.pokemons[index].actual_hp <= 0 or index == self.active_pokemon_index:
+                #     predicts[index] = predicts.min() - 1
         logging.info(f"predictions:\n{predicts}")
         return Action(predicts.argmax())
 
@@ -89,7 +89,9 @@ class ValueFunctionAgent:
             )
         self.epsilon = epsilon
         fake_state = np.array(
-            [np.zeros((1 + 6 * 6) * 2)]
+            [np.zeros((1 + 6) * 2)]
+            # TODO: restore this
+            # [np.zeros((1 + 6 + 6) * 2)]
         )  # 1 active index, 6 pokemons, 6 moves, 2 players
         fake_estimation = np.array([np.zeros(10)])  # change * 6, moves * 4
         self.model.partial_fit(fake_state, fake_estimation)
@@ -97,27 +99,19 @@ class ValueFunctionAgent:
     def reset(self):
         self.learner = NeuralNetworkPlayer(
             [
+                # p.Starmie([m.Surf(), m.Blizzard(), m.Psychic(), m.Thunderbolt()]),
                 p.Jolteon([m.Thunderbolt(), m.BodySlam(), m.DoubleKick(), m.PinMissle()]),
-                p.Starmie([m.Surf(), m.Blizzard(), m.Psychic(), m.Thunderbolt()]),
-                p.Jolteon([m.Thunderbolt(), m.BodySlam(), m.DoubleKick(), m.PinMissle()]),
-                p.Rhydon([m.Earthquake(), m.RockSlide(), m.Surf(), m.BodySlam()]),
-                p.Starmie([m.Surf(), m.Blizzard(), m.Psychic(), m.Thunderbolt()]),
-                p.Starmie([m.Surf(), m.Blizzard(), m.Psychic(), m.Thunderbolt()]),
+                # p.Rhydon([m.Earthquake(), m.RockSlide(), m.Surf(), m.BodySlam()]),
             ],
             self.model,
             self.epsilon,
         )
 
-        # self.opponent = StupidRandomPlayer(build_random_team())
-
         self.opponent = JustAttackPlayer(
             [
-                p.Rhydon([m.Earthquake(), m.RockSlide(), m.Surf(), m.BodySlam()]),
-                p.Rhydon([m.Earthquake(), m.RockSlide(), m.Surf(), m.BodySlam()]),
-                p.Starmie([m.Surf(), m.Blizzard(), m.Psychic(), m.Thunderbolt()]),
+                # p.Starmie([m.Surf(), m.Blizzard(), m.Psychic(), m.Thunderbolt()]),
                 p.Jolteon([m.Thunderbolt(), m.BodySlam(), m.DoubleKick(), m.PinMissle()]),
-                p.Jolteon([m.Thunderbolt(), m.BodySlam(), m.DoubleKick(), m.PinMissle()]),
-                p.Starmie([m.Surf(), m.Blizzard(), m.Psychic(), m.Thunderbolt()]),
+                # p.Rhydon([m.Earthquake(), m.RockSlide(), m.Surf(), m.BodySlam()]),
             ]
         )
 
