@@ -1,4 +1,5 @@
 import logging
+import math
 from collections import deque
 from random import sample
 from typing import Optional
@@ -8,6 +9,7 @@ from sklearn.neural_network import MLPRegressor
 from pokemon_ai.dqn.experience import Experience
 from pokemon_ai.dqn.value_function_agent import ValueFunctionAgent
 from pokemon_ai.simulator.battle import Battle
+from pokemon_ai.simulator.pokedex import calculate_actual_hp
 
 
 class Trainer:
@@ -32,13 +34,13 @@ class Trainer:
                 prev_learner_pokemon_count = len(battle.player1.get_available_pokemons())
                 prev_opponent_pokemon_count = len(battle.player2.get_available_pokemons())
 
-                action, _ = battle.forward_step()
+                result = battle.forward_step()
                 winner = battle.get_winner()
 
                 next_learner_pokemon_count = len(battle.player1.get_available_pokemons())
                 next_opponent_pokemon_count = len(battle.player2.get_available_pokemons())
 
-                if action is not None:
+                if result.player1_action is not None:
                     reward = 0
                     if winner == self.agent.learner:
                         logging.info(f"learner won the battle!")
@@ -49,6 +51,16 @@ class Trainer:
                     if battle.turn > 500:
                         logging.info("battle is too long")
                         reward = -0.1
+                    if result.player1_took_damage > 0:
+                        damage_per = result.player1_took_damage / calculate_actual_hp(
+                            battle.player1.get_active_pokemon().hp
+                        )
+                        reward -= sigmoid(damage_per) - 0.5
+                    if result.player2_took_damage > 0:
+                        damage_per = result.player2_took_damage / calculate_actual_hp(
+                            battle.player2.get_active_pokemon().hp
+                        )
+                        reward += sigmoid(damage_per) - 0.5
                     if prev_opponent_pokemon_count > next_opponent_pokemon_count:
                         reward += 0.3
                     if prev_learner_pokemon_count > next_learner_pokemon_count:
@@ -56,7 +68,7 @@ class Trainer:
                     self.experiences.append(
                         Experience(
                             state=prev_state,
-                            action=action,
+                            action=result.player1_action,
                             reward=reward,
                             next_state=battle.to_array(),
                             done=winner is not None,
@@ -82,3 +94,7 @@ class Trainer:
         print(f"Total Win Rate: {win_count_total / self.episodes}")
         print(f"Total steps : {self.step}")
         print(f"Total episodes : {self.episodes}")
+
+
+def sigmoid(x: float):
+    return 1 / (1 + math.exp(-x))
