@@ -98,7 +98,7 @@ class ValueFunctionAgent:
             )
         self.epsilon = epsilon
         fake_state = np.array(
-            [np.zeros((1 + 6 * 2) * 2)]
+            [np.zeros((7 * 2) * 2)]  # (is_active + id + actual_hp + 4 moves), 2 pokemons, 2 players
             # TODO: restore this
             # [np.zeros((1 + 6 * 6) * 2)]
         )  # 1 active index, 6 pokemons, (id + actual_hp + 4 moves), 2 players

@@ -114,5 +114,8 @@ class Player:
         return f"{self.__class__.__name__}({self.pokemons} active:{self.get_active_pokemon()})"
 
     def to_array(self) -> list[float]:
-        list2d = [p.to_array() for p in self.pokemons]
-        return [self.active_pokemon_index, *list(itertools.chain(*list2d))]
+        result: list[float] = []
+        for index, pokemon in enumerate(self.pokemons):
+            result.append(1 if index == self.active_pokemon_index else 0)
+            result.extend(pokemon.to_array())
+        return result
