@@ -8,9 +8,10 @@ from sklearn.neural_network import MLPRegressor
 import pokemon_ai.simulator.moves as m
 import pokemon_ai.simulator.pokedex as p
 from pokemon_ai.dqn.experience import Experience
+from pokemon_ai.dqn.utils import build_random_team
 from pokemon_ai.simulator.battle import Battle
 from pokemon_ai.simulator.player import Action, Player
-from pokemon_ai.simulator.sample_players import JustAttackPlayer
+from pokemon_ai.simulator.sample_players import JustAttackPlayer, StupidRandomPlayer
 
 GAMMA = 0.9
 
@@ -38,17 +39,12 @@ class NeuralNetworkPlayer(Player):
                 return Action.change_to(self.get_random_living_pokemon_index_to_replace())
         predicts = self.model.predict([[*self.to_array(), *opponent.to_array()]])[0]
         for index, _ in enumerate(predicts):
-            if 1 < index and index < 6:
-                predicts[index] = predicts.min() - 1
-            elif (
+            if (
                 index < 6
                 and self.pokemons[index].actual_hp <= 0
                 or index == self.active_pokemon_index
             ):
                 predicts[index] = predicts.min() - 1
-                # TODO: restore this
-                # if self.pokemons[index].actual_hp <= 0 or index == self.active_pokemon_index:
-                #     predicts[index] = predicts.min() - 1
         logging.info(f"predictions:\n{predicts}")
         return Action(predicts.argmax())
 
@@ -60,9 +56,6 @@ class NeuralNetworkPlayer(Player):
             predicts = predicts_arr[0][:6]  # [:6] removes skill moves
             for index in range(0, len(self.pokemons)):
                 if self.pokemons[index].actual_hp <= 0 or index == self.active_pokemon_index:
-                    predicts[index] = predicts.min() - 1
-            for index in range(0, len(predicts)):
-                if 1 < index:
                     predicts[index] = predicts.min() - 1
             logging.info(f"predictions:\n{predicts}")
             return Action(predicts.argmax())
@@ -97,41 +90,23 @@ class ValueFunctionAgent:
                 max_iter=200,
             )
         self.epsilon = epsilon
-        fake_state = np.array(
-            [np.zeros((7 * 2) * 2)]  # (is_active + id + actual_hp + 4 moves), 2 pokemons, 2 players
-            # TODO: restore this
-            # [np.zeros((1 + 6 * 6) * 2)]
-        )  # 1 active index, 6 pokemons, (id + actual_hp + 4 moves), 2 players
+        # pokemon(id + is_active + actual_hp + 4 moves) * 8, 2 players
+        fake_state = np.array([np.zeros((7 * 6) * 2)])
         fake_estimation = np.array([np.zeros(10)])  # change * 6, moves * 4
         self.model.partial_fit(fake_state, fake_estimation)
 
     def reset(self, max_episodes: int, episodes: int):
         self.learner = NeuralNetworkPlayer(
-            [
-                p.Jolteon([m.Thunderbolt(), m.BodySlam(), m.DoubleKick(), m.PinMissle()]),
-                p.Starmie([m.Surf(), m.Blizzard(), m.Psychic(), m.Thunderbolt()]),
-                # p.Rhydon([m.Earthquake(), m.RockSlide(), m.Surf(), m.BodySlam()]),
-            ],
+            build_random_team(),
             self.model,
             self.epsilon,
         )
 
-        # if episodes / max_episodes < random():
-        #     self.opponent = JustAttackPlayer(
-        #         [
-        #             # p.Starmie([m.Surf(), m.Blizzard(), m.Psychic(), m.Thunderbolt()]),
-        #             # p.Jolteon([m.Thunderbolt(), m.BodySlam(), m.DoubleKick(), m.PinMissle()]),
-        #             p.Rhydon([m.Surf(), m.Surf(), m.Surf(), m.Surf()])
-        #         ]
-        #     )
-        # else:
-        self.opponent = JustAttackPlayer(
-            [
-                p.Rhydon([m.Earthquake(), m.RockSlide(), m.Surf(), m.BodySlam()]),
-                p.Jolteon([m.Thunderbolt(), m.BodySlam(), m.DoubleKick(), m.PinMissle()]),
-                # p.Starmie([m.Surf(), m.Blizzard(), m.Psychic(), m.Thunderbolt()]),
-            ]
-        )
+        # Curriculum learning: use random player at the beginning
+        if episodes / max_episodes < random():
+            self.opponent = StupidRandomPlayer(build_random_team())
+        else:
+            self.opponent = JustAttackPlayer(build_random_team())
 
         # TODO: Actually we want to use an opponent which is also a neural network,
         # But it requires to change the simulator to support multiple neural network players
@@ -152,18 +127,3 @@ class ValueFunctionAgent:
             y[i][experience.action.value] = reward
 
         self.model.partial_fit(states, y)
-
-
-def build_random_team() -> list[p.Pokemon]:
-    pokemons = [
-        p.Jolteon([m.Thunderbolt(), m.BodySlam(), m.DoubleKick(), m.PinMissle()]),
-        p.Jolteon([m.Thunderbolt(), m.BodySlam(), m.DoubleKick(), m.PinMissle()]),
-        p.Jolteon([m.Thunderbolt(), m.BodySlam(), m.DoubleKick(), m.PinMissle()]),
-        p.Rhydon([m.Earthquake(), m.RockSlide(), m.Surf(), m.BodySlam()]),
-        p.Rhydon([m.Earthquake(), m.RockSlide(), m.Surf(), m.BodySlam()]),
-        p.Rhydon([m.Earthquake(), m.RockSlide(), m.Surf(), m.BodySlam()]),
-        p.Starmie([m.Surf(), m.Blizzard(), m.Psychic(), m.Thunderbolt()]),
-        p.Starmie([m.Surf(), m.Blizzard(), m.Psychic(), m.Thunderbolt()]),
-        p.Starmie([m.Surf(), m.Blizzard(), m.Psychic(), m.Thunderbolt()]),
-    ]
-    return sample(pokemons, 6)
