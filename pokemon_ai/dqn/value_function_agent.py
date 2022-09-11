@@ -39,10 +39,8 @@ class NeuralNetworkPlayer(Player):
                 return Action.change_to(self.get_random_living_pokemon_index_to_replace())
         predicts = self.model.predict([[*self.to_array(), *opponent.to_array()]])[0]
         for index, _ in enumerate(predicts):
-            if (
-                index < 6
-                and self.pokemons[index].actual_hp <= 0
-                or index == self.active_pokemon_index
+            if index < 6 and (
+                self.pokemons[index].actual_hp <= 0 or index == self.active_pokemon_index
             ):
                 predicts[index] = predicts.min() - 1
         logging.info(f"predictions:\n{predicts}")
