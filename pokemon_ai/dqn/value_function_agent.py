@@ -1,11 +1,10 @@
 import logging
-from random import random, sample
+from random import random
 from typing import Optional
 
 import numpy as np
 from sklearn.neural_network import MLPRegressor
 
-import pokemon_ai.simulator.moves as m
 import pokemon_ai.simulator.pokedex as p
 from pokemon_ai.dqn.experience import Experience
 from pokemon_ai.dqn.utils import build_random_team
