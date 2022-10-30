@@ -13,3 +13,15 @@ poetry install
 ```
 poetry run python -m pytest tests/simulator/
 ```
+
+# Training
+
+```
+poetry run python pokemon_ai/main.py learn
+```
+
+# Replay
+
+```
+poetry run python pokemon_ai/main.py replay
+```
