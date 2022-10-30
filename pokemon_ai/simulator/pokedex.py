@@ -53,7 +53,7 @@ class Rhydon(Pokemon):
     spa = 45
     spd = 45
     spe = 40
-    available_moves = [m.Earthquake()]
+    available_moves = []
 
 
 class Starmie(Pokemon):
@@ -65,7 +65,7 @@ class Starmie(Pokemon):
     spa = 100
     spd = 100
     spe = 115
-    available_moves = [m.Surf()]
+    available_moves = []
 
 
 class Jolteon(Pokemon):
@@ -77,4 +77,4 @@ class Jolteon(Pokemon):
     spa = 110
     spd = 110
     spe = 130
-    available_moves = [m.Thunderbolt()]
+    available_moves = []
