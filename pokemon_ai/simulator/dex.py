@@ -1,3 +1,6 @@
+from pokemon_ai.simulator.player import Action
+
+
 class Move:
     power: int
 
@@ -13,12 +16,12 @@ class Thunder(Move):
 class Pokemon:
     hp: int
     spe: int
-    move1: Move
+    move0: Move
 
-    def get_move(self, index: int) -> Move:
-        match index:
-            case 1:
-                return self.move1
+    def get_move_by_action(self, action: Action) -> Move:
+        match action:
+            case Action.MOVE_0:
+                return self.move0
             case _:
                 raise NotImplementedError
 

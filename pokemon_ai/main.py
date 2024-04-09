@@ -3,7 +3,8 @@ import logging
 import joblib
 import typer
 
-from pokemon_ai.learning.trainer import Trainer
+from pokemon_ai.q_learning.agent import Agent
+from pokemon_ai.q_learning.environment import Environment
 from pokemon_ai.simulator.battle import Battle
 from pokemon_ai.simulator.player import RandomPlayer
 
@@ -14,10 +15,9 @@ app = typer.Typer()
 def learn(episodes: int = 10000, model_path: str = "models/model.pkl", debug: bool = False):
     if debug:
         logging.basicConfig(level=logging.DEBUG)
-    trainer = Trainer(
-        episodes=episodes, battle=Battle(player1=RandomPlayer(), player2=RandomPlayer())
-    )
-    trainer.train()
+    env = Environment()
+    agent = Agent(epsilon=0.2)
+    agent.learn(env, episodes=episodes)
     # joblib.dump(trainer.agent.model, model_path)
 
 

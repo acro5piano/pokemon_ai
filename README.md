@@ -1,6 +1,6 @@
 # pokemon_ai
 
-[wip] Deep Q Network Pokemon AI
+[wip] Deep Q Network Pokemon AI, mainly for GSC OU
 
 # Setup
 
@@ -8,20 +8,30 @@
 poetry install
 ```
 
-# Run Unit Testing
+# Implement plan
 
-```
-poetry run python -m pytest tests/simulator/
-```
+Basically, GSC OU rule is applied.
 
-# Training
+## Phase 1. Simple Q learning with over simplified environment
 
-```
-poetry run python pokemon_ai/main.py learn
-```
+Environment:
 
-# Replay
+- Do not consider
+  - Critical hit
+  - STAB
+  - Team building
+  - PP
+  - Damage random value
+  - Any other complex things
+- Agent and opponent have the same pokemon:
+  - Snorlax
+    - Return
+    - Earthquake
+- Damage calculation
+  - Return always 166 damage to the foe's Snorlax
+  - Earthquake always 109 damage to the foe's Snorlax
 
-```
-poetry run python pokemon_ai/main.py replay
-```
+Agents:
+
+- The opponent picks an action randomly.
+- Our agent should pick Return only, because it has more damage than Earthquake.
