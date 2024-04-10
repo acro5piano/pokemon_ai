@@ -14,9 +14,12 @@ class Environment:
 
     def step(self, action: Action):
         self.battle.forward_step(action)
+        # TODO: define them
+        return (self.battle.to_array(), 1, False)
 
     def reset(self):
         self.battle = Battle(self.opponent)
+        return self.battle.to_array()
 
     def render(self):
         logger.log(self.battle)

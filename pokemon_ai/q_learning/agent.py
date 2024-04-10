@@ -1,12 +1,13 @@
 import random
 from dataclasses import dataclass
+from typing import List
 
 from pokemon_ai import logger
 from pokemon_ai.q_learning.environment import Environment
 from pokemon_ai.simulator.battle import Battle
 from pokemon_ai.simulator.player import Action
 
-State = int  # TODO
+State = List[int]  # TODO
 
 
 @dataclass
@@ -24,12 +25,19 @@ class Agent:
 
     def learn(self, env: Environment, episodes: int):
         for step in range(episodes):
-            experience = []
+            state = env.reset()
+            experiences: List[Experience] = []
             if step % 100 == 0:
                 env.render()
             while True:
-                action = 0
-                env.step(action)
+                action = self.policy(state)
+                experience = Experience(state=state, action=action, reward=0)
+                state, reward, terminated = env.step(action)
+                experience.reward = reward
+                experiences.append(experience)
+                if terminated:
+                    break
+            # TODO: monte-carlo learning
 
     def policy(self, state: State):
         # TODO: implement this
