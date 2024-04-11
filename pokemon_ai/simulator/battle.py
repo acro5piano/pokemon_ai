@@ -3,17 +3,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import List, Optional, Tuple
 
+from numpy import array, ndarray
+
 from pokemon_ai.simulator.dex import BodySlam, Move, Pokemon, Snorlax, Thunder, Zapdos
 from pokemon_ai.simulator.player import Action, Player
-
-
-@dataclass
-class StepResult:
-    battle: Battle
-    player1_action: Optional[Action] = None
-    player2_action: Optional[Action] = None
-    player1_took_damage: int = 0
-    player2_took_damage: int = 0
 
 
 class Battle:
@@ -27,18 +20,21 @@ class Battle:
     def forward_step(self, agent_action: Action):
         self.turn += 1
         opponent_action = self.opponent.choose_action()
-        # TODO: use np.array
+        # TODO: define them
+        return
 
     # TODO: use np.array
-    def to_array(self) -> List[int]:
-        return [
-            self.agent.active_pokemon_index,
-            self.agent.pokemon0.hp,
-            self.agent.pokemon1.hp,
-            self.opponent.active_pokemon_index,
-            self.opponent.pokemon0.hp,
-            self.opponent.pokemon1.hp,
-        ]
+    def to_array(self) -> ndarray:
+        return array(
+            [
+                self.agent.active_pokemon_index,
+                self.agent.pokemon0.hp,
+                self.agent.pokemon1.hp,
+                self.opponent.active_pokemon_index,
+                self.opponent.pokemon0.hp,
+                self.opponent.pokemon1.hp,
+            ]
+        )
 
 
 # Simplified damage calculation

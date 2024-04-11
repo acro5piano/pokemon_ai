@@ -2,17 +2,17 @@ import random
 from dataclasses import dataclass
 from typing import List
 
+from numpy import ndarray
+
 from pokemon_ai import logger
 from pokemon_ai.q_learning.environment import Environment
 from pokemon_ai.simulator.battle import Battle
 from pokemon_ai.simulator.player import Action
 
-State = List[int]  # TODO
-
 
 @dataclass
 class Experience:
-    state: State
+    state: ndarray
     action: Action
     reward: float
 
@@ -39,7 +39,7 @@ class Agent:
                     break
             # TODO: monte-carlo learning
 
-    def policy(self, state: State):
+    def policy(self, state: ndarray):
         # TODO: implement this
         return random.choice(
             [
