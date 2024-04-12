@@ -24,27 +24,28 @@ class Agent:
         self.epsilon = epsilon
 
     def learn(self, env: Environment, episodes: int):
-        for step in range(episodes):
+        for e in range(episodes):
             state = env.reset()
+            # print(state)
             experiences: List[Experience] = []
-            if step % 100 == 0:
-                env.render()
             while True:
+                # if e % 100 == 0:
+                #     env.render()
                 action = self.policy(state)
-                experience = Experience(state=state, action=action, reward=0)
-                state, reward, terminated = env.step(action)
-                experience.reward = reward
-                experiences.append(experience)
+                next_state, reward, terminated = env.step(action)
+                # print(state, reward, terminated)
+                state = next_state
+                experiences.append(Experience(state=state, action=action, reward=reward))
                 if terminated:
                     break
+            print(experiences)
             # TODO: monte-carlo learning
 
     def policy(self, state: ndarray):
         # TODO: implement this
         return random.choice(
             [
-                Action.CHANGE_TO_0,
-                Action.CHANGE_TO_1,
                 Action.MOVE_0,
+                Action.MOVE_1,
             ]
         )

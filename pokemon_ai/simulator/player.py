@@ -6,14 +6,14 @@ from pokemon_ai.simulator.dex import Pokemon, Snorlax, Zapdos
 
 
 class Action(Enum):
-    CHANGE_TO_0 = 0
-    CHANGE_TO_1 = 1
+    # CHANGE_TO_0 = 0
+    # CHANGE_TO_1 = 1
     # CHANGE_TO_2 = 2
     # CHANGE_TO_3 = 3
     # CHANGE_TO_4 = 4
     # CHANGE_TO_5 = 5
     MOVE_0 = 5
-    # MOVE_1 = 6
+    MOVE_1 = 6
     # MOVE_2 = 7
     # MOVE_3 = 8
 
@@ -28,6 +28,7 @@ class Action(Enum):
 
 
 PokemonIndex = Literal[0, 1]
+# PokemonIndex = Literal[0, 1, 2, 3, 4, 5]
 
 
 class Player:
@@ -50,14 +51,13 @@ class Player:
 
 
 class RandomPlayer(Player):
-    pokemon1 = Zapdos()
-    pokemon2 = Snorlax()
+    def __init__(self):
+        self.pokemon0 = Snorlax()
 
     def choose_action(self) -> Action:
         return random.choice(
             [
-                Action.CHANGE_TO_0,
-                Action.CHANGE_TO_1,
                 Action.MOVE_0,
+                Action.MOVE_1,
             ]
         )
