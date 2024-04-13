@@ -2,7 +2,7 @@ import random
 from dataclasses import dataclass
 from typing import List
 
-from numpy import ndarray
+import numpy as np
 
 from pokemon_ai import logger
 from pokemon_ai.q_learning.environment import Environment
@@ -16,16 +16,20 @@ GAMMA = 0.9
 
 @dataclass
 class Experience:
-    state: ndarray
+    state: np.ndarray
     action: Action
     reward: float
 
 
 class Agent:
     epsilon: float
+    Q: np.ndarray
 
-    def __init__(self, epsilon: float) -> None:
+    def __init__(self, epsilon: float = 0.1) -> None:
         self.epsilon = epsilon
+        state_space = 4
+        action_space = 2
+        self.Q = np.zeros((state_space, action_space))
 
     def learn(self, env: Environment, episodes: int):
         num_of_win = 0
@@ -46,11 +50,15 @@ class Agent:
                 # print(experiences)
             # TODO: q learning
 
-    def policy(self, state: ndarray):
-        # TODO: implement this
-        return random.choice(
+    def policy(self, state: np.ndarray) -> Action:
+        # By defualt, random move
+        action = random.choice(
             [
                 Action.MOVE_0,
                 Action.MOVE_1,
             ]
         )
+        if random.random() > self.epsilon:
+            # Implment e-greedy
+            pass
+        return action
