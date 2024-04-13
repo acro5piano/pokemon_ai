@@ -28,15 +28,13 @@ class Agent:
         self.epsilon = epsilon
 
     def learn(self, env: Environment, episodes: int):
-        num_of_win = 0.0
+        num_of_win = 0
+        experiences: List[Experience] = []
         for episode in range(episodes):
             state = env.reset()
-            # print(state)
-            experiences: List[Experience] = []
             while True:
                 action = self.policy(state)
                 next_state, reward, terminated = env.step(action)
-                # print(state, reward, terminated)
                 state = next_state
                 experiences.append(Experience(state=state, action=action, reward=reward))
                 if terminated:
@@ -45,8 +43,8 @@ class Agent:
                     break
             if episode % 100 == 0:
                 print("win rate:", num_of_win / (episode + 1))
-            # print(experiences)
-            # TODO: monte-carlo learning
+                # print(experiences)
+            # TODO: q learning
 
     def policy(self, state: ndarray):
         # TODO: implement this
