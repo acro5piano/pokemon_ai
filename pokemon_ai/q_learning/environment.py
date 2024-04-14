@@ -20,11 +20,12 @@ class Environment:
 
     def step(self, action: Action) -> StepResult:
         result = self.battle.forward_step(action)
+        state = self.battle.to_array()
         if result == "AGENT_WON":
-            return (self.battle.to_array(), 1, True)
+            return (state, 1, True)
         if result == "OPPONENT_WON":
-            return (self.battle.to_array(), -1, True)
-        return (self.battle.to_array(), 0, False)
+            return (state, -1, True)
+        return (state, 0, False)
 
     def reset(self):
         # TODO: keep the setting

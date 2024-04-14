@@ -6,16 +6,16 @@ from pokemon_ai.simulator.dex import Pokemon, Snorlax, Zapdos
 
 
 class Action(Enum):
+    MOVE_0 = 0
+    MOVE_1 = 1
+    # MOVE_2 = 7
+    # MOVE_3 = 8
     # CHANGE_TO_0 = 0
     # CHANGE_TO_1 = 1
     # CHANGE_TO_2 = 2
     # CHANGE_TO_3 = 3
     # CHANGE_TO_4 = 4
     # CHANGE_TO_5 = 5
-    MOVE_0 = 5
-    MOVE_1 = 6
-    # MOVE_2 = 7
-    # MOVE_3 = 8
 
     def is_change(self) -> bool:
         return self.value < 5
