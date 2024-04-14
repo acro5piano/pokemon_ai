@@ -12,13 +12,19 @@ app = typer.Typer()
 
 
 @app.command()
-def learn(episodes: int = 100000, model_path: str = "models/model.pkl", debug: bool = False):
+def learn(
+    episodes: int = 100000,
+    play: bool = False,
+    model_path: str = "models/model.pkl",
+    debug: bool = False,
+):
     if debug:
         logging.basicConfig(level=logging.DEBUG)
     env = Environment()
     agent = Agent(epsilon=0.1)
     agent.learn(env, episodes=episodes)
-    agent.play(env)
+    if play:
+        agent.play(env)
     # joblib.dump(trainer.agent.model, model_path)
 
 

@@ -23,7 +23,9 @@ ACTION_SPACE = 2
 State = tuple[int, int, int, int]
 #       Q    State      Action  Reward
 #       |    |            |     |
-QType = dict[State, dict[int, int]]
+QType = dict[State, list[float]]
+
+random.seed(42)
 
 
 @dataclass
@@ -31,6 +33,10 @@ class Experience:
     state: State
     action: Action
     reward: float
+
+
+def array_to_state(array: np.ndarray) -> State:
+    return tuple(array)  # type: ignore
 
 
 class Agent:
@@ -52,51 +58,51 @@ class Agent:
             state = env.reset()
             while True:
                 action = self.policy(state)
+                # print(state, action)
                 next_state, reward, terminated = env.step(action)
+                experiences.append(
+                    Experience(state=array_to_state(state), action=action, reward=reward)
+                )
                 state = next_state
-                experiences.append(Experience(state=tuple(state), action=action, reward=reward))
                 if terminated:
                     if reward > 0:
                         num_of_win += 1
                     break
 
-            # if episode % 100 == 0:
-            #     print("win rate:", num_of_win / (episode + 1))
-            # print(experiences)
+            if episode % 100 == 0:
+                print("win rate:", num_of_win / (episode + 1))
 
             for i, x in enumerate(experiences):
                 G, t = 0, 0
                 for j in range(i, len(experiences)):
                     G += math.pow(GAMMA, t) * experiences[j].reward
                     t += 1
-                s = tuple(x.state)
+                s = x.state
                 a = x.action.value
+                if not s in self.Q:
+                    self.Q[s] = [0] * ACTION_SPACE
                 if not s in N:
                     N[s] = [0] * ACTION_SPACE
                 N[s][a] += 1
-
                 alpha = 1 / N[s][a]
-                if not s in self.Q:
-                    print("here", s)
-                    self.Q[s] = [0] * ACTION_SPACE
                 self.Q[s][a] += alpha * (G - self.Q[s][a])
-            # TODO: q learning
+        pprint(self.Q)
 
     def policy(self, state: np.ndarray) -> Action:
         actions = [
             Action.MOVE_0,
             Action.MOVE_1,
         ]
-        if random.random() < self.epsilon or tuple(state) not in self.Q:
+        s = array_to_state(state)
+        if random.random() < self.epsilon or s not in self.Q:
             return random.choice(actions)
         else:
-            index = np.argmax(self.Q[tuple(state)])
+            index = np.argmax(self.Q[s])
             return actions[index]
 
     def play(self, env: Environment):
         self.epsilon = 0
         state = env.reset()
-        pprint(self.Q)
         print(state)
         while True:
             action = self.policy(state)
