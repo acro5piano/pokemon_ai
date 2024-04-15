@@ -1,9 +1,5 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
-from random import random
-from typing import List, Optional, Tuple
-
 from numpy import array, ndarray
 
 from pokemon_ai.simulator.dex import BodySlam, Move, Pokemon, Snorlax, Thunder, Zapdos

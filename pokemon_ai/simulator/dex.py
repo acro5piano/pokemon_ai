@@ -10,6 +10,10 @@ class Thunder(Move):
     power = 120
 
 
+class HiddenPowerIce(Move):
+    power = 70
+
+
 class Earthquake(Move):
     power = 100
 
@@ -34,7 +38,7 @@ class Zapdos(Pokemon):
     hp = 383
     spe = 100
     move0 = Thunder()
-    # move1 = "Hidden Power Ice"
+    move1 = HiddenPowerIce()
 
 
 class Snorlax(Pokemon):
