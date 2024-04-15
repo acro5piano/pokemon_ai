@@ -32,19 +32,14 @@ PokemonIndex = Literal[0, 1]
 
 
 class Player:
-    pokemon0: Pokemon
-    pokemon1: Pokemon
+    pokemons: list[Pokemon]
     active_pokemon_index: PokemonIndex = 0
 
     def choose_action(self) -> Action:
         raise NotImplementedError
 
     def active_pokemon(self) -> Pokemon:
-        match self.active_pokemon_index:
-            case 0:
-                return self.pokemon0
-            case 1:
-                return self.pokemon1
+        return self.pokemons[self.active_pokemon_index]
 
     def change_pokemon(self, index: PokemonIndex):
         self.active_pokemon_index = index
@@ -52,7 +47,7 @@ class Player:
 
 class RandomPlayer(Player):
     def __init__(self):
-        self.pokemon0 = Snorlax()
+        self.pokemons = [Snorlax()]
 
     def choose_action(self) -> Action:
         return random.choice(

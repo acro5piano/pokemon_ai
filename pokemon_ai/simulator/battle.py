@@ -23,18 +23,18 @@ class Battle:
         # For now, agent move first
         # TODO: randomize the spe
         if agent_action == Action.MOVE_0:
-            self.opponent.pokemon0.hp -= 138
+            self.opponent.active_pokemon().hp -= 138
         if agent_action == Action.MOVE_1:
-            self.opponent.pokemon0.hp -= 109
-        if self.opponent.pokemon0.hp <= 0:
+            self.opponent.active_pokemon().hp -= 109
+        if self.opponent.active_pokemon().hp <= 0:
             # TODO: type this
             return "AGENT_WON"
 
         if opponent_action == Action.MOVE_0:
-            self.agent_player.pokemon0.hp -= 138
+            self.agent_player.active_pokemon().hp -= 138
         if opponent_action == Action.MOVE_1:
-            self.agent_player.pokemon0.hp -= 109
-        if self.agent_player.pokemon0.hp <= 0:
+            self.agent_player.active_pokemon().hp -= 109
+        if self.agent_player.active_pokemon().hp <= 0:
             # TODO: type this
             return "OPPONENT_WON"
 
@@ -46,9 +46,9 @@ class Battle:
         return array(
             [
                 self.agent_player.active_pokemon_index,
-                self.agent_player.pokemon0.hp,
+                self.agent_player.pokemons[0].hp,
                 self.opponent.active_pokemon_index,
-                self.opponent.pokemon0.hp,
+                self.opponent.pokemons[0].hp,
             ]
         )
 
