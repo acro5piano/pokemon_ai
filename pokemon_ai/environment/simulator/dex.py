@@ -21,8 +21,9 @@ class Earthquake(Move):
 class Pokemon:
     hp: int
     spe: int
-    move0: Move
-    move1: Move
+    moves: tuple[Move, Move]
+    # TODO: make four moves
+    # moves: tuple[Move, Move, Move, Move]
 
     # def get_move_by_action(self, action: Action) -> Move:
     #     match action:
@@ -37,12 +38,10 @@ class Pokemon:
 class Zapdos(Pokemon):
     hp = 383
     spe = 100
-    move0 = Thunder()
-    move1 = HiddenPowerIce()
+    moves = (Thunder(), HiddenPowerIce())
 
 
 class Snorlax(Pokemon):
     hp = 523
     spe = 30
-    move0 = BodySlam()
-    move1 = Earthquake()
+    moves = (BodySlam(), Earthquake())

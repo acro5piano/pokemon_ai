@@ -17,8 +17,8 @@ ALPHA = 0.1
 GAMMA = 0.9
 
 
-STATE_SPACE = 4
-ACTION_SPACE = 2
+STATE_SPACE = 6
+ACTION_SPACE = 4
 
 State = tuple[int, int, int, int]
 #       Q    State      Action  Reward
@@ -83,6 +83,7 @@ class MonteCarloAgent:
                     self.Q[s] = [0] * ACTION_SPACE
                 if not s in N:
                     N[s] = [0] * ACTION_SPACE
+                print(N[s])
                 N[s][a] += 1
                 alpha = 1 / N[s][a]
                 self.Q[s][a] += alpha * (G - self.Q[s][a])
@@ -92,6 +93,8 @@ class MonteCarloAgent:
         actions = [
             Action.MOVE_0,
             Action.MOVE_1,
+            Action.CHANGE_TO_0,
+            Action.CHANGE_TO_1,
         ]
         s = array_to_state(state)
         if random.random() < self.epsilon or s not in self.Q:
