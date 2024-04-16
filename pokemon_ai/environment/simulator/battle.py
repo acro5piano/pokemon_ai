@@ -51,8 +51,10 @@ class Battle:
             [
                 self.agent_player.active_pokemon_index,
                 self.agent_player.pokemons[0].hp,
+                self.agent_player.pokemons[1].hp,
                 self.opponent.active_pokemon_index,
                 self.opponent.pokemons[0].hp,
+                self.opponent.pokemons[1].hp,
             ]
         )
 

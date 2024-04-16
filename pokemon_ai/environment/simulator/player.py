@@ -8,23 +8,23 @@ from pokemon_ai.environment.simulator.dex import Pokemon, Snorlax, Zapdos
 class Action(Enum):
     MOVE_0 = 0
     MOVE_1 = 1
-    # MOVE_2 = 7
-    # MOVE_3 = 8
-    # CHANGE_TO_0 = 0
-    # CHANGE_TO_1 = 1
-    # CHANGE_TO_2 = 2
-    # CHANGE_TO_3 = 3
-    # CHANGE_TO_4 = 4
-    # CHANGE_TO_5 = 5
-
-    def is_change(self) -> bool:
-        return self.value < 5
+    # MOVE_2 = 2
+    # MOVE_3 = 3
+    CHANGE_TO_0 = 4
+    CHANGE_TO_1 = 5
+    # CHANGE_TO_2 = 6
+    # CHANGE_TO_3 = 7
+    # CHANGE_TO_4 = 8
+    # CHANGE_TO_5 = 9
 
     def is_move(self) -> bool:
-        return self.value >= 5
+        return self.value <= 3
 
-    def to_move(self):
-        return self.value - 4
+    def is_change(self) -> bool:
+        return self.value > 3
+
+    def to_change_to_index(self):
+        return self.value - 3
 
 
 PokemonIndex = Literal[0, 1]
