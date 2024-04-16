@@ -3,7 +3,7 @@ from typing import Tuple
 from numpy import ndarray
 
 from pokemon_ai import logger
-from pokemon_ai.environment.simulator.battle import Battle
+from pokemon_ai.environment.simulator.battle import Battle, BattleResult
 from pokemon_ai.environment.simulator.player import Action, Player, RandomPlayer
 
 StepResult = Tuple[ndarray, float, bool]
@@ -21,9 +21,9 @@ class Environment:
     def step(self, action: Action) -> StepResult:
         result = self.battle.forward_step(action)
         state = self.battle.to_array()
-        if result == "AGENT_WON":
+        if result == BattleResult.AGENT_WON:
             return (state, 1, True)
-        if result == "OPPONENT_WON":
+        if result == BattleResult.OPPONENT_WON:
             return (state, -1, True)
         return (state, 0, False)
 

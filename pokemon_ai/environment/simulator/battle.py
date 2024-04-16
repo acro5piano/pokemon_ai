@@ -1,9 +1,17 @@
 from __future__ import annotations
 
+from enum import Enum
+from typing import Literal
+
 from numpy import array, ndarray
 
 from pokemon_ai.environment.simulator.dex import BodySlam, Move, Pokemon, Snorlax, Thunder, Zapdos
 from pokemon_ai.environment.simulator.player import Action, Player
+
+
+class BattleResult(Enum):
+    AGENT_WON = "AGENT_WON"
+    OPPONENT_WON = "OPPONENT_WON"
 
 
 class Battle:
@@ -16,7 +24,7 @@ class Battle:
         self.opponent = opponent
         self.turn = 0
 
-    def forward_step(self, agent_action: Action):
+    def forward_step(self, agent_action: Action) -> None | BattleResult:
         self.turn += 1
         opponent_action = self.opponent.choose_action()
 
@@ -28,19 +36,14 @@ class Battle:
         if agent_action == Action.MOVE_1:
             self.opponent.active_pokemon().hp -= 109
         if self.opponent.active_pokemon().hp <= 0:
-            # TODO: type this
-            return "AGENT_WON"
+            return BattleResult.AGENT_WON
 
         if opponent_action == Action.MOVE_0:
             self.agent_player.active_pokemon().hp -= 138
         if opponent_action == Action.MOVE_1:
             self.agent_player.active_pokemon().hp -= 109
         if self.agent_player.active_pokemon().hp <= 0:
-            # TODO: type this
-            return "OPPONENT_WON"
-
-        # TODO: define them
-        return
+            return BattleResult.OPPONENT_WON
 
     # TODO: use np.array
     def to_array(self) -> ndarray:
