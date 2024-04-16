@@ -2,7 +2,7 @@ import random
 from enum import Enum
 from typing import Literal
 
-from pokemon_ai.simulator.dex import Pokemon, Snorlax, Zapdos
+from pokemon_ai.environment.simulator.dex import Pokemon, Snorlax, Zapdos
 
 
 class Action(Enum):

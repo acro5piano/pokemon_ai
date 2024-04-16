@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from numpy import array, ndarray
 
-from pokemon_ai.simulator.dex import BodySlam, Move, Pokemon, Snorlax, Thunder, Zapdos
-from pokemon_ai.simulator.player import Action, Player
+from pokemon_ai.environment.simulator.dex import BodySlam, Move, Pokemon, Snorlax, Thunder, Zapdos
+from pokemon_ai.environment.simulator.player import Action, Player
 
 
 class Battle:
@@ -22,6 +22,7 @@ class Battle:
 
         # For now, agent move first
         # TODO: randomize the spe
+        # TODO: consider Zapdos
         if agent_action == Action.MOVE_0:
             self.opponent.active_pokemon().hp -= 138
         if agent_action == Action.MOVE_1:

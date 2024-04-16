@@ -3,8 +3,8 @@ from typing import Tuple
 from numpy import ndarray
 
 from pokemon_ai import logger
-from pokemon_ai.simulator.battle import Battle
-from pokemon_ai.simulator.player import Action, Player, RandomPlayer
+from pokemon_ai.environment.simulator.battle import Battle
+from pokemon_ai.environment.simulator.player import Action, Player, RandomPlayer
 
 StepResult = Tuple[ndarray, float, bool]
 
