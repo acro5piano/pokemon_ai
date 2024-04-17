@@ -63,17 +63,21 @@ class Player:
     def is_dead(self):
         return all(x.hp <= 0 for x in self.pokemons)
 
+    def possible_actions(self) -> list[Action]:
+        pa: list[Action] = [
+            Action.MOVE_0,
+            Action.MOVE_1,
+        ]
+        if self.pokemons[0].hp > 0:
+            pa.append(Action.CHANGE_TO_0)
+        if self.pokemons[1].hp > 0:
+            pa.append(Action.CHANGE_TO_1)
+        return pa
+
 
 class RandomPlayer(Player):
     def __init__(self):
         self.pokemons = [Snorlax(), Zapdos()]
 
     def choose_action(self) -> Action:
-        return random.choice(
-            [
-                Action.MOVE_0,
-                Action.MOVE_1,
-                Action.CHANGE_TO_0,
-                Action.CHANGE_TO_1,
-            ]
-        )
+        return random.choice(self.possible_actions())

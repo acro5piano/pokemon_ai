@@ -38,6 +38,9 @@ class Battle:
 
         if agent_action.is_change():
             self.agent_player.change_pokemon(agent_action.to_change_to_index())
+            if self.agent_player.active_pokemon().hp <= 0:
+                # banned move!
+                return BattleResult.OPPONENT_WON
         if opponent_action.is_change():
             self.opponent.change_pokemon(opponent_action.to_change_to_index())
 

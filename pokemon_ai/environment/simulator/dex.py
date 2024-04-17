@@ -36,12 +36,16 @@ class Pokemon:
 
 
 class Zapdos(Pokemon):
-    hp = 383
     spe = 100
-    moves = (Thunder(), HiddenPowerIce())
+
+    def __init__(self):
+        self.hp = 383
+        self.moves = (Thunder(), HiddenPowerIce())
 
 
 class Snorlax(Pokemon):
-    hp = 523
     spe = 30
-    moves = (BodySlam(), Earthquake())
+
+    def __init__(self):
+        self.hp = 523
+        self.moves = (BodySlam(), Earthquake())

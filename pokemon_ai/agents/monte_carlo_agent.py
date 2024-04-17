@@ -83,11 +83,9 @@ class MonteCarloAgent:
                     self.Q[s] = [0] * ACTION_SPACE
                 if not s in N:
                     N[s] = [0] * ACTION_SPACE
-                print(N[s])
                 N[s][a] += 1
                 alpha = 1 / N[s][a]
                 self.Q[s][a] += alpha * (G - self.Q[s][a])
-        pprint(self.Q)
 
     def policy(self, state: np.ndarray) -> Action:
         actions = [
