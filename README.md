@@ -2,10 +2,22 @@
 
 [wip] Deep Q Network Pokemon AI, mainly for GSC OU
 
-# Setup
+## Setup
 
 ```
 poetry install
+```
+
+## Learn & Run
+
+```
+poetry run python pokemon_ai/main.py --episodes 100000 --play
+```
+
+## Unittest
+
+```
+poetry run pytest
 ```
 
 # Implement plan

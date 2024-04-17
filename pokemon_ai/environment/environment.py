@@ -14,9 +14,10 @@ class Environment:
     agent_player: Player
     opponent: Player
 
-    def __init__(self, agent_player=RandomPlayer(), opponent=RandomPlayer()) -> None:
-        self.opponent = opponent
+    def __init__(self, agent_player, opponent) -> None:
+        self.battle = Battle(RandomPlayer(), RandomPlayer())
         self.agent_player = agent_player
+        self.opponent = opponent
 
     def step(self, action: Action) -> StepResult:
         result = self.battle.forward_step(action)
