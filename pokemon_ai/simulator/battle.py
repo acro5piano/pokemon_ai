@@ -23,53 +23,47 @@ class BattleResult(Enum):
 
 
 class Battle:
-    agent_player: Player
-    opponent: Player
-    turn: int
-
-    def __init__(self, agent_player: Player, opponent: Player):
-        self.agent_player = agent_player
-        self.opponent = opponent
+    def __init__(self, player1: Player, player2: Player):
+        self.player1 = player1
+        self.player2 = player2
         self.turn = 0
 
     def forward_step(self, agent_action: Action) -> None | BattleResult:
         self.turn += 1
-        opponent_action = self.opponent.choose_action()
+        opponent_action = self.player2.choose_action()
 
         if agent_action.is_change():
-            self.agent_player.change_pokemon(agent_action.to_change_to_index())
-            if self.agent_player.active_pokemon().hp <= 0:
+            self.player1.change_pokemon(agent_action.to_change_to_index())
+            if self.player1.active_pokemon().hp <= 0:
                 raise Exception("Invalid Change")
         if opponent_action.is_change():
-            self.opponent.change_pokemon(opponent_action.to_change_to_index())
-            if self.opponent.active_pokemon().hp <= 0:
+            self.player2.change_pokemon(opponent_action.to_change_to_index())
+            if self.player2.active_pokemon().hp <= 0:
                 raise Exception("Invalid Change")
 
         # For now, agent move first
         # TODO: randomize the spe
         if agent_action.is_move():
-            self.opponent.active_pokemon().hp -= self.calculate_damage(
-                self.agent_player.active_pokemon(),
-                self.opponent.active_pokemon(),
-                self.agent_player.active_pokemon().moves[agent_action.value],
+            self.player2.active_pokemon().hp -= self.calculate_damage(
+                self.player1.active_pokemon(),
+                self.player2.active_pokemon(),
+                self.player1.active_pokemon().moves[agent_action.value],
             )
-            if self.opponent.is_dead():
+            if self.player2.is_dead():
                 return BattleResult.AGENT_WON
-            if self.opponent.active_pokemon().hp <= 0:
-                self.opponent.change_pokemon(0 if self.opponent.active_pokemon_index == 1 else 1)
+            if self.player2.active_pokemon().hp <= 0:
+                self.player2.change_pokemon(0 if self.player2.active_pokemon_index == 1 else 1)
 
         if opponent_action.is_move():
-            self.agent_player.active_pokemon().hp -= self.calculate_damage(
-                self.opponent.active_pokemon(),
-                self.agent_player.active_pokemon(),
-                self.opponent.active_pokemon().moves[opponent_action.value],
+            self.player1.active_pokemon().hp -= self.calculate_damage(
+                self.player2.active_pokemon(),
+                self.player1.active_pokemon(),
+                self.player2.active_pokemon().moves[opponent_action.value],
             )
-            if self.agent_player.is_dead():
+            if self.player1.is_dead():
                 return BattleResult.OPPONENT_WON
-            if self.agent_player.active_pokemon().hp <= 0:
-                self.agent_player.change_pokemon(
-                    0 if self.opponent.active_pokemon_index == 1 else 1
-                )
+            if self.player1.active_pokemon().hp <= 0:
+                self.player1.change_pokemon(0 if self.player2.active_pokemon_index == 1 else 1)
 
         return None
 
@@ -77,12 +71,12 @@ class Battle:
     def to_array(self) -> ndarray:
         return array(
             [
-                self.agent_player.active_pokemon_index,
-                self.agent_player.pokemons[0].hp,
-                self.agent_player.pokemons[1].hp,
-                self.opponent.active_pokemon_index,
-                self.opponent.pokemons[0].hp,
-                self.opponent.pokemons[1].hp,
+                self.player1.active_pokemon_index,
+                self.player1.pokemons[0].hp,
+                self.player1.pokemons[1].hp,
+                self.player2.active_pokemon_index,
+                self.player2.pokemons[0].hp,
+                self.player2.pokemons[1].hp,
             ]
         )
 
