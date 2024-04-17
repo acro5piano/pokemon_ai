@@ -1,4 +1,5 @@
 import logging
+import random
 
 import joblib
 import typer
@@ -7,6 +8,8 @@ from pokemon_ai.agents.monte_carlo_agent import MonteCarloAgent
 from pokemon_ai.environment.environment import Environment
 from pokemon_ai.environment.simulator.battle import Battle
 from pokemon_ai.environment.simulator.player import RandomPlayer
+
+random.seed(42)
 
 app = typer.Typer()
 
@@ -20,7 +23,7 @@ def learn(
 ):
     if debug:
         logging.basicConfig(level=logging.DEBUG)
-    env = Environment()
+    env = Environment(RandomPlayer(), RandomPlayer())
     agent = MonteCarloAgent(epsilon=0.1)
     agent.learn(env, episodes=episodes)
     if play:

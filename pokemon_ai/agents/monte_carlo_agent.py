@@ -25,8 +25,6 @@ State = tuple[int, int, int, int]
 #       |    |            |     |
 QType = dict[State, list[float]]
 
-random.seed(42)
-
 
 @dataclass
 class Experience:
