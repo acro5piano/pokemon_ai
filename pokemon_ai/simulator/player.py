@@ -2,7 +2,7 @@ import random
 from enum import Enum
 from typing import Literal
 
-from pokemon_ai.environment.simulator.dex import Pokemon, Snorlax, Zapdos
+from pokemon_ai.simulator.dex import Pokemon, Snorlax, Zapdos
 
 PokemonIndex = Literal[0, 1]
 # PokemonIndex = Literal[0, 1, 2, 3, 4, 5]
@@ -76,8 +76,3 @@ class Player:
         if self.pokemons[1].hp > 0 and self.active_pokemon_index != 1:
             pa.append(Action.CHANGE_TO_1)
         return pa
-
-
-class RandomPlayer(Player):
-    def choose_action(self) -> Action:
-        return random.choice(self.possible_actions())

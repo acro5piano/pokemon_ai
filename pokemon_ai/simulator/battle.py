@@ -4,7 +4,7 @@ from enum import Enum
 
 from numpy import array, ndarray
 
-from pokemon_ai.environment.simulator.dex import (
+from pokemon_ai.simulator.dex import (
     BodySlam,
     Earthquake,
     HiddenPowerIce,
@@ -14,7 +14,7 @@ from pokemon_ai.environment.simulator.dex import (
     Thunder,
     Zapdos,
 )
-from pokemon_ai.environment.simulator.player import Action, Player
+from pokemon_ai.simulator.player import Action, Player
 
 
 class BattleResult(Enum):
@@ -73,10 +73,8 @@ class Battle:
             [
                 self.player1.active_pokemon_index,
                 self.player1.pokemons[0].hp,
-                self.player1.pokemons[1].hp,
                 self.player2.active_pokemon_index,
                 self.player2.pokemons[0].hp,
-                self.player2.pokemons[1].hp,
             ]
         )
 
