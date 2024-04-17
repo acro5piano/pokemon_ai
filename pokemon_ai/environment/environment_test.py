@@ -1,9 +1,9 @@
-from random import seed
+import random
 
 from pokemon_ai.environment.environment import Environment
 from pokemon_ai.environment.simulator.player import Action, RandomPlayer
 
-seed(42)
+random.seed(42)
 
 
 def test_environment():
