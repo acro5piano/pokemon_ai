@@ -1,15 +1,11 @@
+import math
 import random
-from collections import defaultdict
 from dataclasses import dataclass
 from pprint import pprint
-from typing import Dict, List
 
 import numpy as np
-from numpy.lib import math
 
-from pokemon_ai import logger
 from pokemon_ai.learning.environment import Environment
-from pokemon_ai.simulator.battle import Battle
 from pokemon_ai.simulator.player import Action
 
 # TODO: enable to change them
@@ -17,8 +13,7 @@ ALPHA = 0.1
 GAMMA = 0.9
 
 
-STATE_SPACE = 6
-ACTION_SPACE = 4
+ACTION_SPACE = 2
 
 State = tuple[int, int, int, int]
 #       Q    State      Action  Reward
@@ -52,14 +47,10 @@ class MonteCarloAgent:
         num_of_win = 0
         N: QType = {}
         for episode in range(episodes):
-            experiences: List[Experience] = []
+            experiences: list[Experience] = []
             state = env.reset()
             while True:
-                action = self.policy(state, env.agent_player.possible_actions())
-                print(state)
-                print(env.agent_player.pokemons[0].hp)
-                print(env.agent_player.pokemons[1].hp)
-                # print(state, action)
+                action = self.policy(state)
                 next_state, reward, terminated = env.step(action)
                 experiences.append(
                     Experience(state=array_to_state(state), action=action, reward=reward)
@@ -88,24 +79,25 @@ class MonteCarloAgent:
                 alpha = 1 / N[s][a]
                 self.Q[s][a] += alpha * (G - self.Q[s][a])
 
-    def policy(self, state: np.ndarray, possible_actions: list[Action]) -> Action:
+    def policy(
+        self,
+        state: np.ndarray,
+    ) -> Action:
         actions = [action for action in Action]
         s = array_to_state(state)
         if random.random() < self.epsilon or s not in self.Q:
-            return random.choice(possible_actions)
+            return random.choice(actions)
         else:
             index = np.argmax(self.Q[s])
-            print(index)
-            if index in [a.value for a in possible_actions]:
-                return actions[index]
-            return random.choice(possible_actions)
+            return actions[index]
 
     def play(self, env: Environment):
         self.epsilon = 0
         state = env.reset()
-        print(state)
+        pprint(self.Q)
+        pprint(state)
         while True:
-            action = self.policy(state, env.agent_player.possible_actions())
+            action = self.policy(state)
             print(action)
             next_state, reward, terminated = env.step(action)
             print(next_state)

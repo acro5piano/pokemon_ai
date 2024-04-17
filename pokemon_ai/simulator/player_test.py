@@ -13,3 +13,6 @@ def test_player():
         Action.MOVE_0,
         Action.MOVE_1,
     ]
+    player.pokemons[0].hp = 0
+    player.reset()
+    assert player.pokemons[0].hp == 523

@@ -1,4 +1,4 @@
-from random import random
+import random
 
 from pokemon_ai.simulator.player import Action, Player
 

@@ -33,5 +33,9 @@ class Player:
         ]
         return pa
 
+    def reset(self):
+        for i in range(0, 1):
+            self.pokemons[i].reset()
+
     def choose_action(self) -> Action:
         raise NotImplementedError

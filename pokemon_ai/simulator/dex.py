@@ -23,6 +23,9 @@ class Pokemon:
     spe: int
     moves: tuple[Move, Move]
 
+    def reset(self):
+        return self.__init__()
+
 
 class Zapdos(Pokemon):
     spe = 100

@@ -93,3 +93,7 @@ class Battle:
                 return 109
             case _:
                 raise NotImplementedError
+
+    def reset(self):
+        self.player1.reset()
+        self.player2.reset()
