@@ -1,37 +1,34 @@
 import logging
+import random
 
-import joblib
+# import joblib
 import typer
 
-from pokemon_ai.dqn.trainer import Trainer
+from pokemon_ai.learning.environment import Environment
+from pokemon_ai.learning.monte_carlo_agent import MonteCarloAgent
+from pokemon_ai.learning.players import RandomPlayer
+from pokemon_ai.simulator.dex import Snorlax
+
+random.seed(42)
 
 app = typer.Typer()
 
 
 @app.command()
-def learn(episodes: int = 10000, model_path: str = "models/model.pkl", debug: bool = False):
+def learn(
+    episodes: int = 100000,
+    play: bool = False,
+    # model_path: str = "models/model.pkl",
+    debug: bool = False,
+):
     if debug:
         logging.basicConfig(level=logging.DEBUG)
-    trainer = Trainer(episodes=episodes)
-    trainer.train()
-    joblib.dump(trainer.agent.model, model_path)
-
-
-@app.command()
-def replay(episodes: int = 101, model_path: str = "models/model.pkl", debug: bool = True):
-    if debug:
-        logging.basicConfig(level=logging.DEBUG)
-    model = joblib.load(model_path)
-    trainer = Trainer(episodes=episodes, model=model, epsilon=0)
-    trainer.train()
-
-
-@app.command()
-def battle_with_sample(debug: bool = True):
-    if debug:
-        logging.basicConfig(level=logging.DEBUG)
-    trainer = Trainer(episodes=10)
-    trainer.train()
+    env = Environment(RandomPlayer([Snorlax()]))
+    agent = MonteCarloAgent(epsilon=0.1)
+    agent.learn(env, episodes=episodes)
+    if play:
+        agent.play(env)
+    # joblib.dump(trainer.agent.model, model_path)
 
 
 if __name__ == "__main__":

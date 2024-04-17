@@ -25,4 +25,4 @@ jobs:
           poetry config virtualenvs.in-project true # To cache python modules easilly
           poetry install
           poetry run pyright
-          poetry run python -m pytest
+          poetry run pytest

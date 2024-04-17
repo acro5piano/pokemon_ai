@@ -1,146 +1,99 @@
 from __future__ import annotations
 
-import logging
-from dataclasses import dataclass
-from random import random
-from typing import Optional
+from enum import Enum
 
-from pokemon_ai.simulator.damage import calculate_damage
-from pokemon_ai.simulator.moves import Move
+from numpy import array, ndarray
+
+from pokemon_ai.simulator.dex import (
+    BodySlam,
+    Earthquake,
+    HiddenPowerIce,
+    Move,
+    Pokemon,
+    Snorlax,
+    Thunder,
+    Zapdos,
+)
 from pokemon_ai.simulator.player import Action, Player
-from pokemon_ai.simulator.pokedex import Pokemon
 
 
-@dataclass
-class StepResult:
-    battle: Battle
-    player1_action: Optional[Action] = None
-    player2_action: Optional[Action] = None
-    player1_took_damage: int = 0
-    player2_took_damage: int = 0
+class BattleResult(Enum):
+    PLAYER1_WON = "PLAYER1_WON"
+    PLAYER2_WON = "PLAYER2_WON"
 
 
 class Battle:
     player1: Player
     player2: Player
-    turn = 0
+    turn: int
 
     def __init__(self, player1: Player, player2: Player):
         self.player1 = player1
         self.player2 = player2
+        self.turn = 0
 
-    def forward_step(self) -> StepResult:
+    def forward_step(
+        self,
+        player1_action: Action,
+        player2_action: Action,
+    ) -> None | BattleResult:
         self.turn += 1
 
-        if self.player1.get_active_pokemon().actual_hp <= 0:
-            action = self.player1.choose_action_on_pokemon_dead(self.player2)
-            self.player1.validate_change(action.value)
-            self.player1.active_pokemon_index = action.value
-            return StepResult(self, player1_action=action)
-        if self.player2.get_active_pokemon().actual_hp <= 0:
-            action = self.player2.choose_action_on_pokemon_dead(self.player1)
-            self.player2.validate_change(action.value)
-            self.player2.active_pokemon_index = action.value
-            return StepResult(self, player2_action=action)
-
-        action1 = self.player1.choose_action(self.player2)
-        action2 = self.player2.choose_action(self.player1)
-
-        result = StepResult(self, player1_action=action1, player2_action=action2)
-
-        # Handle pokemon change
-        if action1.is_change():
-            self.player1.validate_change(action1.value)
-            self.player1.active_pokemon_index = action1.value
-            logging.info(f"{self.player1} changed their pokemon")
-        if action2.is_change():
-            self.player2.validate_change(action2.value)
-            self.player2.active_pokemon_index = action2.value
-            logging.info(f"{self.player2} changed their pokemon")
-
-        active_pokemon1 = self.player1.get_active_pokemon()
-        active_pokemon2 = self.player2.get_active_pokemon()
-
-        # Handle pokemon damage
-        if action1.is_move() and action2.is_move():
-            # to handle both player choose a move
-            c1, c2 = get_spe_ordered_pokemon(
-                (active_pokemon1, active_pokemon1.actual_moves[action1.value - 6], self.player1),
-                (active_pokemon2, active_pokemon2.actual_moves[action2.value - 6], self.player2),
+        # For now, player1 move first
+        # TODO: consider spe
+        if player1_action.is_move():
+            self.player2.active_pokemon().hp -= self.calculate_damage(
+                self.player1.active_pokemon(),
+                self.player2.active_pokemon(),
+                self.player1.active_pokemon().moves[player1_action.value],
             )
-            logging.info(f"{c1[2]}'s {c1[0]} used {c1[1]}!")
-            damage = calculate_damage(c1[0], c2[0], c1[1])
-            c2[0].actual_hp -= damage
-            logging.info(f"{c2[2]}'s {c2[0]} got {damage}")
-            if c1[2] == self.player1:
-                result.player2_took_damage = damage
-            if c1[2] == self.player2:
-                result.player1_took_damage = damage
-            if c2[0].actual_hp > 0:
-                logging.info(f"{c2[2]}'s {c2[0]} used {c2[1]}!")
-                damage = calculate_damage(c2[0], c1[0], c2[1])
-                c1[0].actual_hp -= damage
-                logging.info(f"{c1[2]}'s {c1[0]} got {damage}")
-                if c2[2] == self.player1:
-                    result.player2_took_damage = damage
-                if c2[2] == self.player2:
-                    result.player1_took_damage = damage
-        else:
-            if action1.is_move():
-                move = active_pokemon1.actual_moves[action1.value - 6]
-                logging.info(f"{self.player1}'s {active_pokemon1} used {move}!")
-                damage = calculate_damage(active_pokemon1, active_pokemon2, move)
-                active_pokemon2.actual_hp -= damage
-                logging.info(f"{self.player2}'s {active_pokemon2} got {damage}")
-                result.player2_took_damage = damage
-            if action2.is_move():
-                move = active_pokemon2.actual_moves[action2.value - 6]
-                logging.info(f"{self.player2}'s {active_pokemon2} used {move}!")
-                damage = calculate_damage(active_pokemon2, active_pokemon1, move)
-                active_pokemon1.actual_hp -= damage
-                logging.info(f"{self.player1}'s {active_pokemon1} got {damage}")
-                result.player1_took_damage = damage
+            if self.player2.is_dead():
+                return BattleResult.PLAYER1_WON
 
-        return result
+        if player2_action.is_move():
+            self.player1.active_pokemon().hp -= self.calculate_damage(
+                self.player2.active_pokemon(),
+                self.player1.active_pokemon(),
+                self.player2.active_pokemon().moves[player2_action.value],
+            )
+            if self.player1.is_dead():
+                return BattleResult.PLAYER2_WON
 
-    def get_winner(self) -> Optional[Player]:
-        if self.player1.is_dead():
-            return self.player2
-        if self.player2.is_dead():
-            return self.player1
+        return None
 
-    def __repr__(self) -> str:
-        return f"Battle:\n  {self.player1}\n  {self.player2})"
+    # TODO: use np.array
+    def to_array(self) -> ndarray:
+        return array(
+            [
+                self.player1.active_pokemon_index,
+                self.player1.pokemons[0].hp,
+                self.player2.active_pokemon_index,
+                self.player2.pokemons[0].hp,
+            ]
+        )
 
-    def validate(self):
-        for Player in (self.player1, self.player2):
-            if len([p for p in Player.pokemons if len(p.actual_moves) == 0]) > 0:
-                raise ValueError("Pokemon must have at least one move")
+    # Simplified damage calculation
+    def calculate_damage(self, attacker: Pokemon, defender: Pokemon, move: Move):
+        match [attacker, defender, move]:
+            case [Zapdos(), Zapdos(), Thunder()]:
+                return 178
+            case [Zapdos(), Snorlax(), Thunder()]:
+                return 156
+            case [Zapdos(), Zapdos(), HiddenPowerIce()]:
+                return 140
+            case [Zapdos(), Snorlax(), HiddenPowerIce()]:
+                return 61
+            case [Snorlax(), Zapdos(), BodySlam()]:
+                return 119
+            case [Snorlax(), Snorlax(), BodySlam()]:
+                return 138
+            case [Snorlax(), Zapdos(), Earthquake()]:
+                return 0
+            case [Snorlax(), Snorlax(), Earthquake()]:
+                return 109
+            case _:
+                raise NotImplementedError
 
-    def run(self) -> Player:
-        logging.info(self)
-        self.validate()
-        while True:
-            logging.info("")
-            self.forward_step()
-            winner = self.get_winner()
-            if winner is not None:
-                logging.info(f"{winner} won the battle!")
-                return winner
-            if self.turn > 500:
-                raise Exception("Battle is too long")
-            logging.info(self)
-
-    def to_array(self) -> list[float]:
-        return [*self.player1.to_array(), *self.player2.to_array()]
-
-
-PokemonMove = tuple[Pokemon, Move, Player]
-
-
-def get_spe_ordered_pokemon(c1: PokemonMove, c2: PokemonMove) -> tuple[PokemonMove, PokemonMove]:
-    if c1[0].spe > c2[0].spe:
-        return (c1, c2)
-    if c1[0].spe < c2[0].spe:
-        return (c2, c1)
-    return (c1, c2) if random() > 0.5 else (c2, c1)
+    def reset(self):
+        self.player1.reset()
+        self.player2.reset()
