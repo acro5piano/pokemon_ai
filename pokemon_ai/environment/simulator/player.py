@@ -51,6 +51,9 @@ class Player:
     pokemons: list[Pokemon]
     active_pokemon_index: PokemonIndex = 0
 
+    def __init__(self, pokemons: list[Pokemon]):
+        self.pokemons = pokemons
+
     def choose_action(self) -> Action:
         raise NotImplementedError
 
@@ -68,16 +71,13 @@ class Player:
             Action.MOVE_0,
             Action.MOVE_1,
         ]
-        if self.pokemons[0].hp > 0:
+        if self.pokemons[0].hp > 0 and self.active_pokemon_index != 0:
             pa.append(Action.CHANGE_TO_0)
-        if self.pokemons[1].hp > 0:
+        if self.pokemons[1].hp > 0 and self.active_pokemon_index != 1:
             pa.append(Action.CHANGE_TO_1)
         return pa
 
 
 class RandomPlayer(Player):
-    def __init__(self):
-        self.pokemons = [Snorlax(), Zapdos()]
-
     def choose_action(self) -> Action:
         return random.choice(self.possible_actions())

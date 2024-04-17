@@ -55,7 +55,10 @@ class MonteCarloAgent:
             experiences: List[Experience] = []
             state = env.reset()
             while True:
-                action = self.policy(state)
+                action = self.policy(state, env.agent_player.possible_actions())
+                print(state)
+                print(env.agent_player.pokemons[0].hp)
+                print(env.agent_player.pokemons[1].hp)
                 # print(state, action)
                 next_state, reward, terminated = env.step(action)
                 experiences.append(
@@ -85,26 +88,24 @@ class MonteCarloAgent:
                 alpha = 1 / N[s][a]
                 self.Q[s][a] += alpha * (G - self.Q[s][a])
 
-    def policy(self, state: np.ndarray) -> Action:
-        actions = [
-            Action.MOVE_0,
-            Action.MOVE_1,
-            Action.CHANGE_TO_0,
-            Action.CHANGE_TO_1,
-        ]
+    def policy(self, state: np.ndarray, possible_actions: list[Action]) -> Action:
+        actions = [action for action in Action]
         s = array_to_state(state)
         if random.random() < self.epsilon or s not in self.Q:
-            return random.choice(actions)
+            return random.choice(possible_actions)
         else:
             index = np.argmax(self.Q[s])
-            return actions[index]
+            print(index)
+            if index in [a.value for a in possible_actions]:
+                return actions[index]
+            return random.choice(possible_actions)
 
     def play(self, env: Environment):
         self.epsilon = 0
         state = env.reset()
         print(state)
         while True:
-            action = self.policy(state)
+            action = self.policy(state, env.agent_player.possible_actions())
             print(action)
             next_state, reward, terminated = env.step(action)
             print(next_state)
