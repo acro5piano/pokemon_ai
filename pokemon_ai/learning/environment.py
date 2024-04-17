@@ -3,9 +3,10 @@ from typing import Tuple
 from numpy import ndarray
 
 from pokemon_ai import logger
-from pokemon_ai.environment.simulator.battle import Battle, BattleResult
-from pokemon_ai.environment.simulator.dex import Snorlax, Zapdos
-from pokemon_ai.environment.simulator.player import Action, Player, RandomPlayer
+from pokemon_ai.learning.players import RandomPlayer
+from pokemon_ai.simulator.battle import Battle, BattleResult
+from pokemon_ai.simulator.dex import Snorlax, Zapdos
+from pokemon_ai.simulator.player import Action, Player
 
 StepResult = Tuple[ndarray, float, bool]
 

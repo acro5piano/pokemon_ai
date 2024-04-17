@@ -18,52 +18,46 @@ from pokemon_ai.simulator.player import Action, Player
 
 
 class BattleResult(Enum):
-    AGENT_WON = "AGENT_WON"
-    OPPONENT_WON = "OPPONENT_WON"
+    PLAYER1_WON = "PLAYER1_WON"
+    PLAYER2_WON = "PLAYER2_WON"
 
 
 class Battle:
+    player1: Player
+    player2: Player
+    turn: int
+
     def __init__(self, player1: Player, player2: Player):
         self.player1 = player1
         self.player2 = player2
         self.turn = 0
 
-    def forward_step(self, agent_action: Action) -> None | BattleResult:
+    def forward_step(
+        self,
+        player1_action: Action,
+        player2_action: Action,
+    ) -> None | BattleResult:
         self.turn += 1
-        opponent_action = self.player2.choose_action()
 
-        if agent_action.is_change():
-            self.player1.change_pokemon(agent_action.to_change_to_index())
-            if self.player1.active_pokemon().hp <= 0:
-                raise Exception("Invalid Change")
-        if opponent_action.is_change():
-            self.player2.change_pokemon(opponent_action.to_change_to_index())
-            if self.player2.active_pokemon().hp <= 0:
-                raise Exception("Invalid Change")
-
-        # For now, agent move first
-        # TODO: randomize the spe
-        if agent_action.is_move():
+        # For now, player1 move first
+        # TODO: consider spe
+        if player1_action.is_move():
             self.player2.active_pokemon().hp -= self.calculate_damage(
                 self.player1.active_pokemon(),
                 self.player2.active_pokemon(),
-                self.player1.active_pokemon().moves[agent_action.value],
+                self.player1.active_pokemon().moves[player1_action.value],
             )
             if self.player2.is_dead():
-                return BattleResult.AGENT_WON
-            if self.player2.active_pokemon().hp <= 0:
-                self.player2.change_pokemon(0 if self.player2.active_pokemon_index == 1 else 1)
+                return BattleResult.PLAYER1_WON
 
-        if opponent_action.is_move():
+        if player2_action.is_move():
             self.player1.active_pokemon().hp -= self.calculate_damage(
                 self.player2.active_pokemon(),
                 self.player1.active_pokemon(),
-                self.player2.active_pokemon().moves[opponent_action.value],
+                self.player2.active_pokemon().moves[player2_action.value],
             )
             if self.player1.is_dead():
-                return BattleResult.OPPONENT_WON
-            if self.player1.active_pokemon().hp <= 0:
-                self.player1.change_pokemon(0 if self.player2.active_pokemon_index == 1 else 1)
+                return BattleResult.PLAYER2_WON
 
         return None
 

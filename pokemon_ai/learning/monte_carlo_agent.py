@@ -8,9 +8,9 @@ import numpy as np
 from numpy.lib import math
 
 from pokemon_ai import logger
-from pokemon_ai.environment.environment import Environment
-from pokemon_ai.environment.simulator.battle import Battle
-from pokemon_ai.environment.simulator.player import Action
+from pokemon_ai.learning.environment import Environment
+from pokemon_ai.simulator.battle import Battle
+from pokemon_ai.simulator.player import Action
 
 # TODO: enable to change them
 ALPHA = 0.1

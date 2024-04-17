@@ -24,7 +24,7 @@ poetry run pytest
 
 Basically, GSC OU rule is applied.
 
-## Phase 1. Simple Q learning with over simplified environment
+## Phase 1. Simple Q learning with over-simplified environment
 
 Environment:
 
