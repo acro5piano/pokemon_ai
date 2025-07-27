@@ -1,19 +1,20 @@
-Create reinforcement learing program for Pokemon battle.
-
 # Rule
 
-- GSC OU (gen 2) rule is applied.
+Great! Let's move next phase.
 
-For phase 1, let's solve over-simplified environment:
+- There are three pokemons for each players:
 
-- There are two pokemons for each players:
   - Snorlax (Default Active) / HP: 523
     - Return
     - Earthquake
-  - Zapdos / HP: 523
+  - Zapdos / HP: 383
     - Thunderbolt
     - Hidden Power Ice
-- Damages are fixed value:
+  - Nidoking / HP: 365
+    - Ice Beam
+    - Earthquake
+
+- Damages:
 
 | Attacker | Defender | Move             | Damage |
 | -------- | -------- | ---------------- | ------ |
@@ -21,10 +22,20 @@ For phase 1, let's solve over-simplified environment:
 | Snorlax  | Snorlax  | Earthquake       | 109    |
 | Snorlax  | Zapdos   | Return           | 142    |
 | Snorlax  | Zapdos   | Earthquake       | 0      |
+| Snorlax  | Nidoking | Return           | 150    |
+| Snorlax  | Nidoking | Earthquake       | 198    |
 | Zapdos   | Snorlax  | Thunderbolt      | 123    |
 | Zapdos   | Snorlax  | Hidden Power Ice | 61     |
 | Zapdos   | Zapdos   | Thunderbolt      | 141    |
 | Zapdos   | Zapdos   | Hidden Power Ice | 140    |
+| Zapdos   | Nidoking | Thunderbolt      | 0      |
+| Zapdos   | Nidoking | Hidden Power Ice | 155    |
+| Nidoking | Snorlax  | Earthquake       | 145    |
+| Nidoking | Snorlax  | Ice Beam         | 63     |
+| Nidoking | Zapdos   | Earthquake       | 0      |
+| Nidoking | Zapdos   | Ice Beam         | 146    |
+| Nidoking | Nidoking | Earthquake       | 262    |
+| Nidoking | Nidoking | Ice Beam         | 162    |
 
 - Players can do either:
   - use move 1
@@ -42,7 +53,8 @@ Do not consider:
 
 # What to do
 
-For phase 1, train with simple Deep Q Network.
+- Consider Nidoking
+- Now players have more than 2 pokemons, the action should contain "which pokemons to switch"
 
 # Recommended tech stack
 
