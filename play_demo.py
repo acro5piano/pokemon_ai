@@ -40,19 +40,31 @@ def play_against_ai(agent_path=None):
 
         if agent_name == "player_0":
             # Human player
+            valid_actions = env.get_valid_actions(agent_name)
+            print(f"Valid actions: {valid_actions}")
+            
             while True:
                 try:
-                    action = int(input(f"\n{agent_name} - Choose action (0-4): "))
-                    if 0 <= action <= 4:
+                    action = int(input(f"\n{agent_name} - Choose action {valid_actions}: "))
+                    if action in valid_actions:
                         break
                     else:
-                        print("Invalid action! Choose 0-4.")
+                        print(f"Invalid action! Choose from: {valid_actions}")
                 except ValueError:
                     print("Invalid input! Enter a number.")
         else:
             # AI player
             state = env.observe(agent_name)
-            action = ai_agent.act(state, training=False)
+            valid_actions = env.get_valid_actions(agent_name)
+            
+            # Get AI action and ensure it's valid
+            ai_action = ai_agent.act(state, training=False)
+            if ai_action in valid_actions:
+                action = ai_action
+            else:
+                # Fallback to first valid action if AI chooses invalid action
+                action = valid_actions[0] if valid_actions else 0
+                
             print(f"\n{agent_name} (AI) chose action: {action}")
 
         env.step(action)

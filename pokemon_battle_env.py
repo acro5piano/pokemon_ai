@@ -176,9 +176,11 @@ class PokemonBattleEnv(AECEnv):
 
         agent = self.agent_selection
 
-        # Validate action
-        if action not in range(5):
-            action = 0
+        # Validate action against current valid actions
+        valid_actions = self.get_valid_actions(agent)
+        if action not in valid_actions:
+            # If invalid action, default to first valid action
+            action = valid_actions[0] if valid_actions else 0
 
         player_state = self.game_state[agent]
 
@@ -193,24 +195,6 @@ class PokemonBattleEnv(AECEnv):
                 else:
                     # All Pokemon fainted - this should not happen in valid gameplay
                     pass
-
-        # Prevent fainted Pokemon from attacking
-        if action < 2 and player_state["fainted"][player_state["active"]]:
-            # Force switch to first available Pokemon
-            for i in range(3):
-                if self._is_valid_switch(player_state, i):
-                    action = 2 + i
-                    break
-            else:
-                # All Pokemon fainted, action becomes invalid but store anyway
-                pass
-
-        # Validate switch target
-        if action >= 2:
-            target_idx = action - 2
-            if not self._is_valid_switch(player_state, target_idx):
-                # Invalid switch (out of bounds, fainted, or same Pokemon), default to move 0
-                raise Exception("Unable to switch to fainted pokemon")
 
         # Store action
         self.game_state["actions"][agent] = action
@@ -329,3 +313,15 @@ class PokemonBattleEnv(AECEnv):
 
     def action_space(self, agent):
         return self._action_spaces[agent]
+    
+    def get_action_mask(self, agent):
+        """Get action mask for valid actions (1 for valid, 0 for invalid)"""
+        if agent not in self.game_state:
+            return [1, 1, 1, 1, 1]  # All actions valid initially
+            
+        valid_actions = self.get_valid_actions(agent)
+        mask = [0] * 5  # Initialize all as invalid
+        for action in valid_actions:
+            mask[action] = 1  # Mark valid actions
+        
+        return mask
