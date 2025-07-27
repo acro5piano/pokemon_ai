@@ -198,14 +198,14 @@ class PokemonBattleEnv(AECEnv):
                     # All Pokemon fainted - this should not happen in valid gameplay
                     pass
 
-        # Reset rewards for this step
-        self.rewards = {agent: 0 for agent in self.agents}
-        
         # Store action
         self.game_state["actions"][agent] = action
 
         # If both players have acted, resolve turn
         if len(self.game_state["actions"]) == 2:
+            # Reset rewards for this turn (before resolution)
+            self.rewards = {agent: 0 for agent in self.agents}
+            
             self._resolve_turn()
             self.game_state["actions"] = {}
 
@@ -226,6 +226,9 @@ class PokemonBattleEnv(AECEnv):
                             self.rewards[a] = 1   # Winner
                             self._cumulative_rewards[a] += 1
                     break
+        else:
+            # If only one player has acted, reset their reward to 0 for this step
+            self.rewards[agent] = 0
 
         # Move to next agent
         self.agent_selection = self._agent_selector.next()

@@ -73,6 +73,15 @@ def train_pokemon_dqn(episodes=1000, save_interval=100):
                     agents[agent_name].replay()
 
             step_count += 1
+            
+            # If game ended, ensure both players get their final rewards
+            if any(env.terminations.values()):
+                done = True
+                # Collect final rewards for both players
+                for agent in env.agents:
+                    if agent != agent_name:  # Other agent hasn't been processed yet
+                        final_reward = env.rewards.get(agent, 0)
+                        episode_reward[agent] += final_reward
 
             # Check if all agents are done
             if all(env.terminations.values()):
