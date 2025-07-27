@@ -131,11 +131,27 @@ class PokemonBattleEnv(AECEnv):
         if action not in range(3):
             action = 0
 
-        # Handle forced switch if active Pokemon fainted
         player_state = self.game_state[agent]
+        
+        # Handle forced switch if active Pokemon fainted
         if player_state["fainted"][player_state["active"]]:
             if action != 2:  # Must switch
                 action = 2
+            # Validate switch target - must switch to non-fainted Pokemon
+            target_idx = 1 - player_state["active"]
+            if player_state["fainted"][target_idx]:
+                # Both Pokemon fainted - this should not happen in valid gameplay
+                # but handle gracefully by keeping current action
+                pass
+        
+        # Prevent fainted Pokemon from attacking
+        if action < 2 and player_state["fainted"][player_state["active"]]:
+            # Force switch if possible, otherwise do nothing
+            if not player_state["fainted"][1 - player_state["active"]]:
+                action = 2
+            else:
+                # Both Pokemon fainted, action becomes invalid but store anyway
+                pass
 
         # Store action
         self.game_state["actions"][agent] = action
@@ -170,20 +186,32 @@ class PokemonBattleEnv(AECEnv):
         for agent in self.agents:
             if actions[agent] == 2:  # Switch
                 player_state = self.game_state[agent]
-                player_state["active"] = 1 - player_state["active"]
+                target_idx = 1 - player_state["active"]
+                
+                # Only switch if target Pokemon is not fainted
+                if not player_state["fainted"][target_idx]:
+                    player_state["active"] = target_idx
 
         # Then handle attacks
         for agent in self.agents:
             if actions[agent] < 2:  # Attack
                 attacker = self.game_state[agent]
+                attacker_idx = attacker["active"]
+                
+                # Skip attack if attacker is fainted
+                if attacker["fainted"][attacker_idx]:
+                    continue
+                    
                 defender_agent = "player_1" if agent == "player_0" else "player_0"
                 defender = self.game_state[defender_agent]
+                defender_idx = defender["active"]
+                
+                # Skip attack if defender is already fainted
+                if defender["fainted"][defender_idx]:
+                    continue
 
                 # Get damage
-                attacker_idx = attacker["active"]
-                defender_idx = defender["active"]
                 move_idx = actions[agent]
-
                 damage = self.damage_table.get(
                     (attacker_idx, defender_idx, move_idx), 0
                 )
@@ -193,7 +221,7 @@ class PokemonBattleEnv(AECEnv):
                     0, defender["hp"][defender_idx] - damage
                 )
 
-                # Check for faint
+                # Check for faint - set HP to exactly 0 and mark as fainted
                 if defender["hp"][defender_idx] == 0:
                     defender["fainted"][defender_idx] = True
 
