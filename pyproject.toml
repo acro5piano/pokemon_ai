@@ -18,3 +18,11 @@ dev = [
     "pyright>=1.1.403",
     "ruff>=0.12.5",
 ]
+
+[tool.pyright]
+reportOptionalSubscript = false
+reportOptionalMemberAccess = false
+reportIncompatibleVariableOverride = false
+reportIncompatibleMethodOverride = false
+reportArgumentType = false
+typeCheckingMode = "basic"

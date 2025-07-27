@@ -58,7 +58,7 @@ def train_pokemon_dqn(episodes=1000, save_interval=100):
 
                 # Calculate reward (change in cumulative reward)
                 reward = env._cumulative_rewards.get(agent_name, 0) - prev_reward
-                episode_reward[agent_name] += reward
+                episode_reward[agent_name] += int(reward) if isinstance(reward, float) else reward
 
                 # Get next state
                 next_state = env.observe(agent_name)

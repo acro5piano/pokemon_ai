@@ -56,17 +56,17 @@ class PokemonBattleEnv(AECEnv):
             1: ["Thunderbolt", "Hidden Power Ice"],
         }
 
-        self.state = None
-        self.observations = None
-        self.infos = None
-        self._cumulative_rewards = None
-        self.terminations = None
-        self.truncations = None
+        self.game_state: Dict[str, Any] = {}
+        self.observations: Dict[str, np.ndarray] = {}
+        self.infos: Dict[str, Dict[str, Any]] = {}
+        self._cumulative_rewards: Dict[str, float] = {}
+        self.terminations: Dict[str, bool] = {}
+        self.truncations: Dict[str, bool] = {}
 
-    def observation_space(self, agent):
+    def get_observation_space(self, agent):
         return self._observation_spaces[agent]
 
-    def action_space(self, agent):
+    def get_action_space(self, agent):
         return self._action_spaces[agent]
 
     def reset(self, seed=None, options=None):
@@ -75,7 +75,7 @@ class PokemonBattleEnv(AECEnv):
         self.agent_selection = self._agent_selector.next()
 
         # Initialize game state
-        self.state = {
+        self.game_state = {
             "player_0": {
                 "active": 0,  # Snorlax
                 "hp": [self.max_hp, self.max_hp],  # [Snorlax, Zapdos]
@@ -99,18 +99,21 @@ class PokemonBattleEnv(AECEnv):
 
     def _get_observation(self, agent):
         obs = np.zeros(6, dtype=np.float32)
+        
+        if not self.game_state:
+            return obs
 
         # Player 0 stats
-        obs[0] = self.state["player_0"]["hp"][self.state["player_0"]["active"]]
-        bench_idx = 1 - self.state["player_0"]["active"]
-        obs[1] = self.state["player_0"]["hp"][bench_idx]
-        obs[2] = self.state["player_0"]["active"]
+        obs[0] = self.game_state["player_0"]["hp"][self.game_state["player_0"]["active"]]
+        bench_idx = 1 - self.game_state["player_0"]["active"]
+        obs[1] = self.game_state["player_0"]["hp"][bench_idx]
+        obs[2] = self.game_state["player_0"]["active"]
 
         # Player 1 stats
-        obs[3] = self.state["player_1"]["hp"][self.state["player_1"]["active"]]
-        bench_idx = 1 - self.state["player_1"]["active"]
-        obs[4] = self.state["player_1"]["hp"][bench_idx]
-        obs[5] = self.state["player_1"]["active"]
+        obs[3] = self.game_state["player_1"]["hp"][self.game_state["player_1"]["active"]]
+        bench_idx = 1 - self.game_state["player_1"]["active"]
+        obs[4] = self.game_state["player_1"]["hp"][bench_idx]
+        obs[5] = self.game_state["player_1"]["active"]
 
         return obs
 
@@ -129,18 +132,18 @@ class PokemonBattleEnv(AECEnv):
             action = 0
 
         # Handle forced switch if active Pokemon fainted
-        player_state = self.state[agent]
+        player_state = self.game_state[agent]
         if player_state["fainted"][player_state["active"]]:
             if action != 2:  # Must switch
                 action = 2
 
         # Store action
-        self.state["actions"][agent] = action
+        self.game_state["actions"][agent] = action
 
         # If both players have acted, resolve turn
-        if len(self.state["actions"]) == 2:
+        if len(self.game_state["actions"]) == 2:
             self._resolve_turn()
-            self.state["actions"] = {}
+            self.game_state["actions"] = {}
 
             # Update observations
             for a in self.agents:
@@ -148,7 +151,7 @@ class PokemonBattleEnv(AECEnv):
 
             # Check for game end
             for agent in self.agents:
-                if all(self.state[agent]["fainted"]):
+                if all(self.game_state[agent]["fainted"]):
                     self.terminations = {a: True for a in self.agents}
                     # Rewards: winner gets +1, loser gets -1
                     for a in self.agents:
@@ -161,20 +164,20 @@ class PokemonBattleEnv(AECEnv):
         self.agent_selection = self._agent_selector.next()
 
     def _resolve_turn(self):
-        actions = self.state["actions"]
+        actions = self.game_state["actions"]
 
         # Handle switches first
         for agent in self.agents:
             if actions[agent] == 2:  # Switch
-                player_state = self.state[agent]
+                player_state = self.game_state[agent]
                 player_state["active"] = 1 - player_state["active"]
 
         # Then handle attacks
         for agent in self.agents:
             if actions[agent] < 2:  # Attack
-                attacker = self.state[agent]
+                attacker = self.game_state[agent]
                 defender_agent = "player_1" if agent == "player_0" else "player_0"
-                defender = self.state[defender_agent]
+                defender = self.game_state[defender_agent]
 
                 # Get damage
                 attacker_idx = attacker["active"]
@@ -205,7 +208,7 @@ class PokemonBattleEnv(AECEnv):
 
             for i, agent in enumerate(["player_0", "player_1"]):
                 print(f"\n{agent.upper()}:")
-                player = self.state[agent]
+                player = self.game_state[agent]
                 active_idx = player["active"]
                 active_name = self.pokemon_names[active_idx]
 
@@ -221,10 +224,8 @@ class PokemonBattleEnv(AECEnv):
 
             print("\n" + "=" * 50)
 
-    @functools.lru_cache(maxsize=None)
     def observation_space(self, agent):
         return self._observation_spaces[agent]
 
-    @functools.lru_cache(maxsize=None)
     def action_space(self, agent):
         return self._action_spaces[agent]

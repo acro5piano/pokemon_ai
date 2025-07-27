@@ -16,10 +16,10 @@ class TestPokemonBattleEnv:
         env.reset()
 
         # Check initial state
-        assert env.state["player_0"]["active"] == 0
-        assert env.state["player_1"]["active"] == 0
-        assert env.state["player_0"]["hp"] == [523, 523]
-        assert env.state["player_1"]["hp"] == [523, 523]
+        assert env.game_state["player_0"]["active"] == 0
+        assert env.game_state["player_1"]["active"] == 0
+        assert env.game_state["player_0"]["hp"] == [523, 523]
+        assert env.game_state["player_1"]["hp"] == [523, 523]
 
         # Check observations
         obs = env.observe("player_0")
@@ -66,8 +66,8 @@ class TestPokemonBattleEnv:
         env.step(0)
 
         # Check that damage was applied
-        assert env.state["player_0"]["hp"][0] < 523
-        assert env.state["player_1"]["hp"][0] < 523
+        assert env.game_state["player_0"]["hp"][0] < 523
+        assert env.game_state["player_1"]["hp"][0] < 523
 
     def test_switch_action(self):
         env = PokemonBattleEnv()
@@ -80,16 +80,16 @@ class TestPokemonBattleEnv:
         env.step(2)
 
         # Check that Pokemon were switched
-        assert env.state["player_0"]["active"] == 1  # Zapdos
-        assert env.state["player_1"]["active"] == 1  # Zapdos
+        assert env.game_state["player_0"]["active"] == 1  # Zapdos
+        assert env.game_state["player_1"]["active"] == 1  # Zapdos
 
     def test_game_end_condition(self):
         env = PokemonBattleEnv()
         env.reset()
 
         # Manually set one player's Pokemon to 0 HP
-        env.state["player_1"]["hp"] = [0, 0]
-        env.state["player_1"]["fainted"] = [True, True]
+        env.game_state["player_1"]["hp"] = [0, 0]
+        env.game_state["player_1"]["fainted"] = [True, True]
 
         # Take any action to trigger game end check
         env.step(0)

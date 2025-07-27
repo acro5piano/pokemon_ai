@@ -105,7 +105,7 @@ def watch_ai_battle(agent1_path=None, agent2_path=None):
             }
 
             if action < 2:
-                active_idx = env.state[agent_name]["active"]
+                active_idx = env.game_state[agent_name]["active"]
                 move_name = move_names[active_idx][action]
                 print(f"\n{agent_name} uses {move_name}!")
             else:
