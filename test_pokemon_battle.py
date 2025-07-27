@@ -9,7 +9,7 @@ class TestPokemonBattleEnv:
     def test_env_init(self):
         env = PokemonBattleEnv()
         assert env.possible_agents == ["player_0", "player_1"]
-        assert env.max_hp == 523
+        assert env.pokemon_max_hp == [523, 383, 365]
 
     def test_reset(self):
         env = PokemonBattleEnv()
@@ -18,28 +18,29 @@ class TestPokemonBattleEnv:
         # Check initial state
         assert env.game_state["player_0"]["active"] == 0
         assert env.game_state["player_1"]["active"] == 0
-        assert env.game_state["player_0"]["hp"] == [523, 523]
-        assert env.game_state["player_1"]["hp"] == [523, 523]
+        assert env.game_state["player_0"]["hp"] == [523, 383, 365]
+        assert env.game_state["player_1"]["hp"] == [523, 383, 365]
 
         # Check observations
         obs = env.observe("player_0")
-        assert obs.shape == (6,)
-        assert obs[0] == 523  # Active Pokemon HP
-        assert obs[1] == 523  # Bench Pokemon HP
+        assert obs.shape == (8,)
+        assert obs[0] == 523  # Snorlax HP
+        assert obs[1] == 383  # Zapdos HP
+        assert obs[2] == 365  # Nidoking HP
 
     def test_action_space(self):
         env = PokemonBattleEnv()
         env.reset()
 
         for agent in env.agents:
-            assert env.action_space(agent).n == 3
+            assert env.action_space(agent).n == 5
 
     def test_observation_space(self):
         env = PokemonBattleEnv()
         env.reset()
 
         for agent in env.agents:
-            assert env.observation_space(agent).shape == (6,)
+            assert env.observation_space(agent).shape == (8,)
 
     def test_damage_calculation(self):
         env = PokemonBattleEnv()
@@ -73,11 +74,11 @@ class TestPokemonBattleEnv:
         env = PokemonBattleEnv()
         env.reset()
 
-        # Player 0 switches
-        env.step(2)
+        # Player 0 switches to Zapdos
+        env.step(3)  # Switch to Pokemon 1 (Zapdos)
 
-        # Player 1 switches
-        env.step(2)
+        # Player 1 switches to Zapdos
+        env.step(3)  # Switch to Pokemon 1 (Zapdos)
 
         # Check that Pokemon were switched
         assert env.game_state["player_0"]["active"] == 1  # Zapdos
@@ -88,8 +89,8 @@ class TestPokemonBattleEnv:
         env.reset()
 
         # Manually set one player's Pokemon to 0 HP
-        env.game_state["player_1"]["hp"] = [0, 0]
-        env.game_state["player_1"]["fainted"] = [True, True]
+        env.game_state["player_1"]["hp"] = [0, 0, 0]
+        env.game_state["player_1"]["fainted"] = [True, True, True]
 
         # Take any action to trigger game end check
         env.step(0)
@@ -101,48 +102,48 @@ class TestPokemonBattleEnv:
 
 class TestDQNAgent:
     def test_agent_init(self):
-        agent = DQNAgent(state_size=6, action_size=3)
-        assert agent.state_size == 6
-        assert agent.action_size == 3
+        agent = DQNAgent(state_size=8, action_size=5)
+        assert agent.state_size == 8
+        assert agent.action_size == 5
         assert agent.epsilon == 1.0
 
     def test_act_random(self):
-        agent = DQNAgent(state_size=6, action_size=3)
-        state = np.random.rand(6)
+        agent = DQNAgent(state_size=8, action_size=5)
+        state = np.random.rand(8)
 
         # With epsilon=1, should always return random action
         actions = [agent.act(state, training=True) for _ in range(10)]
-        assert all(0 <= a < 3 for a in actions)
+        assert all(0 <= a < 5 for a in actions)
 
     def test_act_greedy(self):
-        agent = DQNAgent(state_size=6, action_size=3)
+        agent = DQNAgent(state_size=8, action_size=5)
         agent.epsilon = 0  # No exploration
 
-        state = np.random.rand(6)
+        state = np.random.rand(8)
         action = agent.act(state, training=False)
-        assert 0 <= action < 3
+        assert 0 <= action < 5
 
     def test_memory(self):
-        agent = DQNAgent(state_size=6, action_size=3)
+        agent = DQNAgent(state_size=8, action_size=5)
 
-        state = np.random.rand(6)
+        state = np.random.rand(8)
         action = 1
         reward = 1.0
-        next_state = np.random.rand(6)
+        next_state = np.random.rand(8)
         done = False
 
         agent.remember(state, action, reward, next_state, done)
         assert len(agent.memory) == 1
 
     def test_replay_insufficient_memory(self):
-        agent = DQNAgent(state_size=6, action_size=3, batch_size=32)
+        agent = DQNAgent(state_size=8, action_size=5, batch_size=32)
 
         # Add only a few samples
         for _ in range(10):
-            state = np.random.rand(6)
-            action = np.random.randint(3)
+            state = np.random.rand(8)
+            action = np.random.randint(5)
             reward = np.random.randn()
-            next_state = np.random.rand(6)
+            next_state = np.random.rand(8)
             done = False
             agent.remember(state, action, reward, next_state, done)
 
@@ -150,15 +151,15 @@ class TestDQNAgent:
         agent.replay()
 
     def test_epsilon_decay(self):
-        agent = DQNAgent(state_size=6, action_size=3, epsilon_decay=0.95)
+        agent = DQNAgent(state_size=8, action_size=5, epsilon_decay=0.95)
         initial_epsilon = agent.epsilon
 
         # Fill memory
         for _ in range(100):
-            state = np.random.rand(6)
-            action = np.random.randint(3)
+            state = np.random.rand(8)
+            action = np.random.randint(5)
             reward = np.random.randn()
-            next_state = np.random.rand(6)
+            next_state = np.random.rand(8)
             done = False
             agent.remember(state, action, reward, next_state, done)
 

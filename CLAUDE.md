@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-This is a Pokemon battle simulation built using PettingZoo framework for reinforcement learning. The environment features a simplified 2v2 Pokemon battle with Snorlax and Zapdos, implementing core battle mechanics like damage calculation, switching, fainting, and speed-based turn order.
+This is a Pokemon battle simulation built using PettingZoo framework for reinforcement learning. The environment features a 3v3 Pokemon battle with Snorlax, Zapdos, and Nidoking, implementing core battle mechanics like damage calculation, strategic switching, fainting, and speed-based turn order.
 
 ## Code Architecture
 
@@ -10,8 +10,8 @@ This is a Pokemon battle simulation built using PettingZoo framework for reinfor
 
 - **PokemonBattleEnv**: Main environment class implementing PettingZoo AEC interface
 - **Game State**: Tracks HP, active Pokemon, faint status for both players
-- **Action Space**: 0-1 for moves, 2 for switch
-- **Observation Space**: 6-dimensional vector with HP and active Pokemon info
+- **Action Space**: 0-1 for moves, 2-4 for switch to specific Pokemon (0-2)
+- **Observation Space**: 8-dimensional vector with all Pokemon HP and active Pokemon info
 
 ### Battle Flow
 
@@ -26,7 +26,8 @@ This is a Pokemon battle simulation built using PettingZoo framework for reinfor
 ### Pokemon Stats
 
 - **Snorlax** (Index 0): HP=523, Speed=30, Moves=[Return, Earthquake]
-- **Zapdos** (Index 1): HP=523, Speed=100, Moves=[Thunderbolt, Hidden Power Ice]
+- **Zapdos** (Index 1): HP=383, Speed=100, Moves=[Thunderbolt, Hidden Power Ice]
+- **Nidoking** (Index 2): HP=365, Speed=85, Moves=[Earthquake, Ice Beam]
 
 ## Testing and Validation
 

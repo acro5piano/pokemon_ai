@@ -14,8 +14,8 @@ def train_pokemon_dqn(episodes=1000, save_interval=100):
     env = PokemonBattleEnv(render_mode=None)
 
     # Create agents for both players
-    state_size = 6  # Observation space size
-    action_size = 3  # Action space size
+    state_size = 8  # Observation space size (3 Pokemon HP + active index for each player)
+    action_size = 5  # Action space size (2 moves + 3 switch actions)
 
     agents = {
         "player_0": DQNAgent(state_size, action_size),

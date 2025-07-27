@@ -10,20 +10,26 @@ def play_against_ai(agent_path=None):
     env = PokemonBattleEnv(render_mode="human")
 
     # Load trained agent for player 1
-    ai_agent = DQNAgent(state_size=6, action_size=3)
+    ai_agent = DQNAgent(state_size=8, action_size=5)
     if agent_path and os.path.exists(agent_path):
-        ai_agent.load(agent_path)
-        ai_agent.epsilon = 0  # No exploration during play
-        print(f"Loaded AI agent from {agent_path}")
+        try:
+            ai_agent.load(agent_path)
+            ai_agent.epsilon = 0  # No exploration during play
+            print(f"Loaded AI agent from {agent_path}")
+        except Exception as e:
+            print(f"Warning: Could not load agent from {agent_path}: {e}")
+            print("Using untrained AI agent with new architecture")
     else:
         print("Using untrained AI agent")
 
     print("\n=== POKEMON BATTLE DEMO ===")
-    print("You are Player 0 with Snorlax (active) and Zapdos (bench)")
+    print("You are Player 0 with Snorlax (active), Zapdos, and Nidoking")
     print("\nActions:")
-    print("0: Use Move 1 (Snorlax: Return, Zapdos: Thunderbolt)")
-    print("1: Use Move 2 (Snorlax: Earthquake, Zapdos: Hidden Power Ice)")
-    print("2: Switch Pokemon\n")
+    print("0: Use Move 1 (Snorlax: Return, Zapdos: Thunderbolt, Nidoking: Earthquake)")
+    print("1: Use Move 2 (Snorlax: Earthquake, Zapdos: Hidden Power Ice, Nidoking: Ice Beam)")
+    print("2: Switch to Snorlax")
+    print("3: Switch to Zapdos")
+    print("4: Switch to Nidoking\n")
 
     env.reset()
     done = False
@@ -36,11 +42,11 @@ def play_against_ai(agent_path=None):
             # Human player
             while True:
                 try:
-                    action = int(input(f"\n{agent_name} - Choose action (0-2): "))
-                    if 0 <= action <= 2:
+                    action = int(input(f"\n{agent_name} - Choose action (0-4): "))
+                    if 0 <= action <= 4:
                         break
                     else:
-                        print("Invalid action! Choose 0, 1, or 2.")
+                        print("Invalid action! Choose 0-4.")
                 except ValueError:
                     print("Invalid input! Enter a number.")
         else:
@@ -76,11 +82,15 @@ def watch_ai_battle(agent1_path=None, agent2_path=None):
     for i, (agent_name, path) in enumerate(
         [("player_0", agent1_path), ("player_1", agent2_path)]
     ):
-        agents[agent_name] = DQNAgent(state_size=6, action_size=3)
+        agents[agent_name] = DQNAgent(state_size=8, action_size=5)
         if path and os.path.exists(path):
-            agents[agent_name].load(path)
-            agents[agent_name].epsilon = 0
-            print(f"Loaded {agent_name} from {path}")
+            try:
+                agents[agent_name].load(path)
+                agents[agent_name].epsilon = 0
+                print(f"Loaded {agent_name} from {path}")
+            except Exception as e:
+                print(f"Warning: Could not load {agent_name} from {path}: {e}")
+                print(f"Using untrained agent for {agent_name}")
         else:
             print(f"Using untrained agent for {agent_name}")
 
@@ -102,6 +112,7 @@ def watch_ai_battle(agent1_path=None, agent2_path=None):
             move_names = {
                 0: ["Return", "Earthquake"],
                 1: ["Thunderbolt", "Hidden Power Ice"],
+                2: ["Earthquake", "Ice Beam"],
             }
 
             if action < 2:
@@ -109,7 +120,9 @@ def watch_ai_battle(agent1_path=None, agent2_path=None):
                 move_name = move_names[active_idx][action]
                 print(f"\n{agent_name} uses {move_name}!")
             else:
-                print(f"\n{agent_name} switches Pokemon!")
+                pokemon_names = ["Snorlax", "Zapdos", "Nidoking"]
+                target_idx = action - 2
+                print(f"\n{agent_name} switches to {pokemon_names[target_idx]}!")
 
             env.step(action)
 

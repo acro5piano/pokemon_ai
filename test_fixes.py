@@ -53,9 +53,24 @@ sys.modules['numpy'] = MockNumpy()
 sys.modules['gymnasium'] = type('MockGymnasium', (), {'spaces': MockSpaces()})()
 
 # Create a more complete pettingzoo mock
-pettingzoo_mock = type('MockPettingZoo', (), {'AECEnv': object})()
-utils_mock = type('MockUtils', (), {})()
-agent_selector_mock = type('MockAgentSelectorModule', (), {'agent_selector': MockAgentSelector})()
+from typing import Any
+
+class MockPettingZoo:
+    AECEnv = object
+    
+    def __init__(self):
+        self.utils: Any = None
+
+class MockUtils:
+    def __init__(self):
+        self.agent_selector: Any = None
+
+class MockAgentSelectorModule:
+    agent_selector = MockAgentSelector
+
+pettingzoo_mock = MockPettingZoo()
+utils_mock = MockUtils()
+agent_selector_mock = MockAgentSelectorModule()
 
 utils_mock.agent_selector = agent_selector_mock
 pettingzoo_mock.utils = utils_mock
