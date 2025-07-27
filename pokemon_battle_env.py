@@ -46,20 +46,20 @@ class PokemonBattleEnv(AECEnv):
             (0, 0, 0): 166,  # Snorlax vs Snorlax, Return
             (0, 0, 1): 109,  # Snorlax vs Snorlax, Earthquake
             (0, 1, 0): 142,  # Snorlax vs Zapdos, Return
-            (0, 1, 1): 0,    # Snorlax vs Zapdos, Earthquake
+            (0, 1, 1): 0,  # Snorlax vs Zapdos, Earthquake
             (0, 2, 0): 150,  # Snorlax vs Nidoking, Return
             (0, 2, 1): 198,  # Snorlax vs Nidoking, Earthquake
             # Zapdos attacks
             (1, 0, 0): 123,  # Zapdos vs Snorlax, Thunderbolt
-            (1, 0, 1): 61,   # Zapdos vs Snorlax, Hidden Power Ice
+            (1, 0, 1): 61,  # Zapdos vs Snorlax, Hidden Power Ice
             (1, 1, 0): 141,  # Zapdos vs Zapdos, Thunderbolt
             (1, 1, 1): 140,  # Zapdos vs Zapdos, Hidden Power Ice
-            (1, 2, 0): 0,    # Zapdos vs Nidoking, Thunderbolt
+            (1, 2, 0): 0,  # Zapdos vs Nidoking, Thunderbolt
             (1, 2, 1): 155,  # Zapdos vs Nidoking, Hidden Power Ice
             # Nidoking attacks
             (2, 0, 0): 145,  # Nidoking vs Snorlax, Earthquake
-            (2, 0, 1): 63,   # Nidoking vs Snorlax, Ice Beam
-            (2, 1, 0): 0,    # Nidoking vs Zapdos, Earthquake
+            (2, 0, 1): 63,  # Nidoking vs Snorlax, Ice Beam
+            (2, 1, 0): 0,  # Nidoking vs Zapdos, Earthquake
             (2, 1, 1): 146,  # Nidoking vs Zapdos, Ice Beam
             (2, 2, 0): 262,  # Nidoking vs Nidoking, Earthquake
             (2, 2, 1): 162,  # Nidoking vs Nidoking, Ice Beam
@@ -93,12 +93,20 @@ class PokemonBattleEnv(AECEnv):
         self.game_state = {
             "player_0": {
                 "active": 0,  # Snorlax (default active)
-                "hp": [self.pokemon_max_hp[0], self.pokemon_max_hp[1], self.pokemon_max_hp[2]],  # [Snorlax, Zapdos, Nidoking]
+                "hp": [
+                    self.pokemon_max_hp[0],
+                    self.pokemon_max_hp[1],
+                    self.pokemon_max_hp[2],
+                ],  # [Snorlax, Zapdos, Nidoking]
                 "fainted": [False, False, False],
             },
             "player_1": {
                 "active": 0,  # Snorlax (default active)
-                "hp": [self.pokemon_max_hp[0], self.pokemon_max_hp[1], self.pokemon_max_hp[2]],  # [Snorlax, Zapdos, Nidoking]
+                "hp": [
+                    self.pokemon_max_hp[0],
+                    self.pokemon_max_hp[1],
+                    self.pokemon_max_hp[2],
+                ],  # [Snorlax, Zapdos, Nidoking]
                 "fainted": [False, False, False],
             },
             "actions": {},  # Store actions for simultaneous resolution
@@ -112,9 +120,35 @@ class PokemonBattleEnv(AECEnv):
         self.terminations = {agent: False for agent in self.agents}
         self.truncations = {agent: False for agent in self.agents}
 
+    def _is_valid_switch(self, player_state, target_idx):
+        """Check if switching to target_idx is valid"""
+        return (
+            0 <= target_idx < 3
+            and not player_state["fainted"][target_idx]
+            and target_idx != player_state["active"]
+        )
+    
+    def get_valid_actions(self, agent):
+        """Get list of valid actions for the current agent"""
+        if agent not in self.game_state:
+            return [0, 1]  # Default to moves only
+            
+        player_state = self.game_state[agent]
+        valid_actions = []
+        
+        # Moves are always available (0, 1)
+        valid_actions.extend([0, 1])
+        
+        # Add valid switch actions
+        for i in range(3):
+            if self._is_valid_switch(player_state, i):
+                valid_actions.append(2 + i)  # Switch actions are 2, 3, 4
+        
+        return valid_actions
+
     def _get_observation(self, agent):
         obs = np.zeros(8, dtype=np.float32)
-        
+
         if not self.game_state:
             return obs
 
@@ -147,36 +181,36 @@ class PokemonBattleEnv(AECEnv):
             action = 0
 
         player_state = self.game_state[agent]
-        
+
         # Handle forced switch if active Pokemon fainted
         if player_state["fainted"][player_state["active"]]:
             if action < 2:  # Must switch
-                # Find first non-fainted Pokemon to switch to
+                # Find first valid Pokemon to switch to
                 for i in range(3):
-                    if not player_state["fainted"][i] and i != player_state["active"]:
+                    if self._is_valid_switch(player_state, i):
                         action = 2 + i  # Switch to Pokemon i
                         break
                 else:
                     # All Pokemon fainted - this should not happen in valid gameplay
                     pass
-        
+
         # Prevent fainted Pokemon from attacking
         if action < 2 and player_state["fainted"][player_state["active"]]:
             # Force switch to first available Pokemon
             for i in range(3):
-                if not player_state["fainted"][i] and i != player_state["active"]:
+                if self._is_valid_switch(player_state, i):
                     action = 2 + i
                     break
             else:
                 # All Pokemon fainted, action becomes invalid but store anyway
                 pass
-        
+
         # Validate switch target
         if action >= 2:
             target_idx = action - 2
-            if target_idx >= 3 or player_state["fainted"][target_idx] or target_idx == player_state["active"]:
-                # Invalid switch, default to move 0
-                action = 0
+            if not self._is_valid_switch(player_state, target_idx):
+                # Invalid switch (out of bounds, fainted, or same Pokemon), default to move 0
+                raise Exception("Unable to switch to fainted pokemon")
 
         # Store action
         self.game_state["actions"][agent] = action
@@ -212,11 +246,9 @@ class PokemonBattleEnv(AECEnv):
             if actions[agent] >= 2:  # Switch action
                 player_state = self.game_state[agent]
                 target_idx = actions[agent] - 2
-                
+
                 # Only switch if target Pokemon is valid and not fainted
-                if (target_idx < 3 and 
-                    not player_state["fainted"][target_idx] and 
-                    target_idx != player_state["active"]):
+                if self._is_valid_switch(player_state, target_idx):
                     player_state["active"] = target_idx
 
         # Then handle attacks based on speed priority
@@ -225,42 +257,38 @@ class PokemonBattleEnv(AECEnv):
             if actions[agent] < 2:  # Attack action
                 attacker = self.game_state[agent]
                 attacker_idx = attacker["active"]
-                
+
                 # Skip if attacker is fainted
                 if not attacker["fainted"][attacker_idx]:
                     speed = self.pokemon_speeds[attacker_idx]
                     attacking_agents.append((agent, speed))
-        
+
         # Sort by speed (highest first), use agent name as tiebreaker for consistency
         attacking_agents.sort(key=lambda x: (-x[1], x[0]))
-        
+
         # Execute attacks in speed order
         for agent, _ in attacking_agents:
             attacker = self.game_state[agent]
             attacker_idx = attacker["active"]
-            
+
             # Check again if attacker is still alive (might have been knocked out)
             if attacker["fainted"][attacker_idx]:
                 continue
-                
+
             defender_agent = "player_1" if agent == "player_0" else "player_0"
             defender = self.game_state[defender_agent]
             defender_idx = defender["active"]
-            
+
             # Skip attack if defender is already fainted
             if defender["fainted"][defender_idx]:
                 continue
 
             # Get damage
             move_idx = actions[agent]
-            damage = self.damage_table.get(
-                (attacker_idx, defender_idx, move_idx), 0
-            )
+            damage = self.damage_table.get((attacker_idx, defender_idx, move_idx), 0)
 
             # Apply damage
-            defender["hp"][defender_idx] = max(
-                0, defender["hp"][defender_idx] - damage
-            )
+            defender["hp"][defender_idx] = max(0, defender["hp"][defender_idx] - damage)
 
             # Check for faint - set HP to exactly 0 and mark as fainted
             if defender["hp"][defender_idx] == 0:
@@ -279,13 +307,19 @@ class PokemonBattleEnv(AECEnv):
                 print(f"\n{agent.upper()}:")
                 player = self.game_state[agent]
                 active_idx = player["active"]
-                
+
                 for pokemon_idx in range(3):
                     pokemon_name = self.pokemon_names[pokemon_idx]
                     max_hp = self.pokemon_max_hp[pokemon_idx]
-                    current_hp = player['hp'][pokemon_idx]
-                    status = " (ACTIVE)" if pokemon_idx == active_idx else " (FAINTED)" if player['fainted'][pokemon_idx] else ""
-                    
+                    current_hp = player["hp"][pokemon_idx]
+                    status = (
+                        " (ACTIVE)"
+                        if pokemon_idx == active_idx
+                        else " (FAINTED)"
+                        if player["fainted"][pokemon_idx]
+                        else ""
+                    )
+
                     print(f"  {pokemon_name}: {current_hp}/{max_hp} HP{status}")
 
             print("\n" + "=" * 50)
