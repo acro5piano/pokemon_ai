@@ -73,7 +73,7 @@ def train_pokemon_dqn(episodes=1000, save_interval=100):
                     agents[agent_name].replay()
 
             step_count += 1
-            
+
             # If game ended, ensure both players get their final rewards
             if any(env.terminations.values()):
                 done = True
@@ -206,7 +206,7 @@ if __name__ == "__main__":
     print("Starting Pokemon Battle DQN Training...")
 
     # Train agents
-    trained_agents = train_pokemon_dqn(episodes=100000)
+    trained_agents = train_pokemon_dqn(episodes=20000)
 
     print("\nTraining complete! Evaluating agents...")
 
