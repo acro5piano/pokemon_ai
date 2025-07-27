@@ -75,6 +75,7 @@ class PokemonBattleEnv(AECEnv):
         self.observations: Dict[str, np.ndarray] = {}
         self.infos: Dict[str, Dict[str, Any]] = {}
         self._cumulative_rewards: Dict[str, float] = {}
+        self.rewards: Dict[str, float] = {}
         self.terminations: Dict[str, bool] = {}
         self.truncations: Dict[str, bool] = {}
 
@@ -117,6 +118,7 @@ class PokemonBattleEnv(AECEnv):
         }
         self.infos = {agent: {} for agent in self.agents}
         self._cumulative_rewards = {agent: 0 for agent in self.agents}
+        self.rewards = {agent: 0 for agent in self.agents}
         self.terminations = {agent: False for agent in self.agents}
         self.truncations = {agent: False for agent in self.agents}
 
@@ -196,6 +198,9 @@ class PokemonBattleEnv(AECEnv):
                     # All Pokemon fainted - this should not happen in valid gameplay
                     pass
 
+        # Reset rewards for this step
+        self.rewards = {agent: 0 for agent in self.agents}
+        
         # Store action
         self.game_state["actions"][agent] = action
 
@@ -209,15 +214,18 @@ class PokemonBattleEnv(AECEnv):
                 self.observations[a] = self._get_observation(a)
 
             # Check for game end
-            for agent in self.agents:
-                if all(self.game_state[agent]["fainted"]):
+            for agent_check in self.agents:
+                if all(self.game_state[agent_check]["fainted"]):
                     self.terminations = {a: True for a in self.agents}
-                    # Rewards: winner gets +1, loser gets -1
+                    # Set final rewards: winner gets +1, loser gets -1
                     for a in self.agents:
-                        if a == agent:
-                            self._cumulative_rewards[a] = -1
+                        if a == agent_check:
+                            self.rewards[a] = -1  # Loser
+                            self._cumulative_rewards[a] += -1
                         else:
-                            self._cumulative_rewards[a] = 1
+                            self.rewards[a] = 1   # Winner
+                            self._cumulative_rewards[a] += 1
+                    break
 
         # Move to next agent
         self.agent_selection = self._agent_selector.next()

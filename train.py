@@ -14,7 +14,9 @@ def train_pokemon_dqn(episodes=1000, save_interval=100):
     env = PokemonBattleEnv(render_mode=None)
 
     # Create agents for both players
-    state_size = 8  # Observation space size (3 Pokemon HP + active index for each player)
+    state_size = (
+        8  # Observation space size (3 Pokemon HP + active index for each player)
+    )
     action_size = 5  # Action space size (2 moves + 3 switch actions)
 
     agents = {
@@ -50,15 +52,12 @@ def train_pokemon_dqn(episodes=1000, save_interval=100):
                 state = env.observe(agent_name)
                 action = agents[agent_name].act(state, training=True)
 
-                # Store previous cumulative reward
-                prev_reward = env._cumulative_rewards.get(agent_name, 0)
-
                 # Take action
                 env.step(action)
 
-                # Calculate reward (change in cumulative reward)
-                reward = env._cumulative_rewards.get(agent_name, 0) - prev_reward
-                episode_reward[agent_name] += int(reward) if isinstance(reward, float) else reward
+                # Get reward for this step
+                reward = env.rewards.get(agent_name, 0)
+                episode_reward[agent_name] += reward
 
                 # Get next state
                 next_state = env.observe(agent_name)
@@ -198,7 +197,7 @@ if __name__ == "__main__":
     print("Starting Pokemon Battle DQN Training...")
 
     # Train agents
-    trained_agents = train_pokemon_dqn(episodes=1000)
+    trained_agents = train_pokemon_dqn(episodes=100000)
 
     print("\nTraining complete! Evaluating agents...")
 
