@@ -1,0 +1,504 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>なぜポケモンAIの勝率は伸びなかったのか</title>
+  <meta property="og:title" content="なぜポケモンAIの勝率は伸びなかったのか" />
+  <meta name="description" content="自作ポケモンDQNとAI生成版を比較し、勝率の測り方、入力値、Q学習、学習回数の問題を高校生向けに図解します。" />
+  <meta property="og:description" content="自作ポケモンDQNとAI生成版を比較し、勝率の測り方、入力値、Q学習、学習回数の問題を高校生向けに図解します。" />
+  <meta property="og:type" content="article" />
+  <meta property="og:locale" content="ja_JP" />
+  <meta name="author" content="pokemon_ai project analysis" />
+  <meta name="robots" content="noindex,nofollow" />
+  <link rel="icon" href="/favicon.ico" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Code+Pro:ital,wght@0,400;0,600;1,400&family=Noto+Sans+JP:wght@400;500;600;700;800;900&display=swap">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.12.0/styles/atom-one-dark.min.css">
+
+  <style>
+    :root {
+      --ink: #172033;
+      --muted: #61708a;
+      --paper: #f7f9fc;
+      --card: #ffffff;
+      --line: #dce3ee;
+      --blue: #3366e8;
+      --blue-soft: #eaf0ff;
+      --red: #dd4653;
+      --red-soft: #fff0f1;
+      --green: #159b73;
+      --green-soft: #e8faf4;
+      --yellow: #f4b740;
+      --yellow-soft: #fff8df;
+      --purple: #7757d7;
+      --shadow: 0 12px 32px rgba(36, 53, 85, .09);
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 8% 3%, rgba(51,102,232,.11), transparent 22rem),
+        radial-gradient(circle at 94% 20%, rgba(21,155,115,.08), transparent 24rem),
+        var(--paper);
+      font-family: "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      line-height: 1.85;
+    }
+
+    code {
+      background: #eef1f7;
+      border-radius: 5px;
+      padding: 1px 6px;
+      font-family: "Source Code Pro", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+      font-size: 13px;
+    }
+    pre code { padding: 0; background: transparent; }
+
+    .wrap { width: min(1120px, calc(100% - 36px)); margin: 0 auto; }
+    .hero { padding: 82px 0 54px; }
+    .eyebrow {
+      display: inline-flex; align-items: center; gap: 8px;
+      color: var(--blue); background: var(--blue-soft);
+      padding: 7px 13px; border-radius: 999px;
+      font-size: 13px; font-weight: 800; letter-spacing: .06em;
+    }
+    .hero h1 {
+      margin: 20px 0 12px; max-width: 920px;
+      font-size: clamp(38px, 6vw, 72px); line-height: 1.13; letter-spacing: -.04em;
+    }
+    .subtitle { margin: 0; color: var(--muted); font-size: clamp(17px, 2.1vw, 23px); font-weight: 500; }
+    .commit { margin-top: 26px; display: flex; flex-wrap: wrap; gap: 9px; }
+    .pill { border: 1px solid var(--line); background: rgba(255,255,255,.75); border-radius: 999px; padding: 6px 12px; color: var(--muted); font-size: 13px; }
+
+    .verdict {
+      display: grid; grid-template-columns: 88px 1fr; gap: 22px; align-items: center;
+      background: #18233b; color: white; padding: 27px 30px; border-radius: 22px; box-shadow: var(--shadow);
+    }
+    .verdict .stamp { width: 78px; height: 78px; display: grid; place-items: center; border-radius: 22px; background: linear-gradient(135deg, #ff6c76, #d83d50); font-weight: 900; font-size: 22px; transform: rotate(-4deg); }
+    .verdict h2 { margin: 0 0 5px; font-size: 21px; }
+    .verdict p { margin: 0; color: #d9e2f4; line-height: 1.7; }
+    .verdict strong { color: #fff3a8; }
+
+    .toc { margin: 34px 0 78px; background: var(--card); border: 1px solid var(--line); border-radius: 18px; overflow: hidden; box-shadow: var(--shadow); }
+    .toc-head { padding: 13px 21px; background: #eff3f9; border-bottom: 1px solid var(--line); font-weight: 800; }
+    .toc-grid { display: grid; grid-template-columns: repeat(3, 1fr); }
+    .toc a { padding: 16px 21px; color: var(--ink); text-decoration: none; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); font-size: 14px; font-weight: 600; }
+    .toc a:hover { background: var(--blue-soft); color: var(--blue); }
+
+    section { margin: 0 0 90px; scroll-margin-top: 20px; }
+    .section-no { color: var(--blue); font-family: "Source Code Pro", monospace; font-weight: 700; font-size: 14px; letter-spacing: .12em; }
+    h2.section-title { margin: 5px 0 12px; font-size: clamp(28px, 4vw, 43px); line-height: 1.25; letter-spacing: -.025em; }
+    .lead { max-width: 850px; color: var(--muted); font-size: 17px; margin: 0 0 31px; }
+
+    .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 24px; box-shadow: 0 5px 18px rgba(36,53,85,.05); }
+    .card h3 { margin: 0 0 8px; font-size: 19px; }
+    .card p { margin: 0; color: var(--muted); }
+    .icon { font-size: 29px; margin-bottom: 10px; }
+
+    .flow { display: grid; grid-template-columns: 1fr 55px 1fr 55px 1fr 55px 1fr; align-items: stretch; }
+    .flow-box { background: white; border: 1px solid var(--line); border-radius: 16px; padding: 20px 15px; text-align: center; }
+    .flow-box b { display: block; font-size: 16px; margin: 6px 0 3px; }
+    .flow-box small { color: var(--muted); }
+    .flow-arrow { display: grid; place-items: center; color: var(--blue); font-size: 26px; font-weight: 900; }
+
+    .arena { overflow: hidden; padding: 0; }
+    .arena-head { padding: 18px 23px; display: flex; align-items: center; justify-content: space-between; }
+    .arena.mine .arena-head { background: var(--red-soft); }
+    .arena.ai .arena-head { background: var(--green-soft); }
+    .arena h3 { margin: 0; }
+    .tag { border-radius: 999px; padding: 3px 10px; font-size: 12px; font-weight: 800; }
+    .mine .tag { color: var(--red); background: white; }
+    .ai .tag { color: var(--green); background: white; }
+    .arena-body { padding: 22px; }
+    .teamline { display: flex; gap: 9px; flex-wrap: wrap; margin: 11px 0 19px; }
+    .mon { background: #f1f4f8; border-radius: 10px; padding: 6px 9px; font-size: 13px; }
+    .spec-list { margin: 0; padding: 0; list-style: none; }
+    .spec-list li { display: flex; justify-content: space-between; gap: 15px; padding: 8px 0; border-top: 1px dashed var(--line); font-size: 14px; }
+    .spec-list span { color: var(--muted); }
+
+    .failure { position: relative; background: white; border: 1px solid var(--line); border-radius: 20px; padding: 28px; margin: 20px 0; box-shadow: var(--shadow); overflow: hidden; }
+    .failure::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 6px; background: var(--red); }
+    .failure.green::before { background: var(--green); }
+    .failure-head { display: flex; gap: 15px; align-items: flex-start; }
+    .num { min-width: 44px; height: 44px; display: grid; place-items: center; border-radius: 13px; color: white; background: var(--red); font: 700 18px "Source Code Pro", monospace; }
+    .failure h3 { margin: 1px 0 4px; font-size: 22px; }
+    .failure .summary { color: var(--muted); margin: 0; }
+    .inside { margin: 23px 0 0 59px; }
+
+    .timeline { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 17px; }
+    .time { padding: 15px; border-radius: 13px; text-align: center; font-size: 14px; font-weight: 700; }
+    .time.random { background: var(--yellow-soft); color: #8b6100; }
+    .time.attack { background: var(--red-soft); color: #a72f3b; }
+    .scale { height: 11px; margin: 9px 0; border-radius: 99px; background: linear-gradient(90deg, var(--yellow) 0%, var(--yellow) 28%, var(--red) 78%, var(--red) 100%); }
+    .caption { color: var(--muted); font-size: 13px; }
+
+    .input-bars { margin-top: 16px; }
+    .input-row { display: grid; grid-template-columns: 105px 1fr 52px; gap: 10px; align-items: center; margin: 9px 0; font-size: 13px; }
+    .bar-track { height: 13px; background: #eef1f6; border-radius: 99px; overflow: hidden; }
+    .bar { height: 100%; min-width: 3px; border-radius: 99px; }
+    .b1 { width: 1%; background: var(--green); }
+    .b9 { width: 2.2%; background: var(--yellow); }
+    .b135 { width: 33%; background: var(--purple); }
+    .b413 { width: 100%; background: var(--red); }
+
+    .neuron-demo { display: grid; grid-template-columns: 1fr 70px 1fr; gap: 12px; align-items: center; margin-top: 19px; }
+    .neuron-side { border: 1px solid var(--line); border-radius: 14px; padding: 15px; text-align: center; }
+    .dead { color: var(--red); background: var(--red-soft); border-color: #f3c6ca; }
+    .neuron-arrow { text-align: center; font-size: 29px; color: var(--muted); }
+
+    .actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 15px 0; }
+    .action { padding: 7px 10px; border-radius: 9px; font: 600 12px "Source Code Pro", monospace; }
+    .legal { background: var(--green-soft); color: #087456; border: 1px solid #a8e2d0; }
+    .illegal { background: var(--red-soft); color: #a72f3b; border: 1px dashed #e6939b; }
+    .maxpick { outline: 3px solid var(--yellow); outline-offset: 2px; }
+
+    pre { margin: 17px 0 0; border-radius: 14px; overflow: auto; font-size: 13px; line-height: 1.65; box-shadow: inset 0 0 0 1px rgba(255,255,255,.06); }
+    .path { display: inline-block; margin-top: 18px; color: var(--blue); font: 600 12px "Source Code Pro", monospace; }
+
+    .counter { display: grid; grid-template-columns: 1fr auto 1fr; gap: 18px; align-items: center; }
+    .big-number { border-radius: 17px; text-align: center; padding: 19px 13px; }
+    .big-number strong { display: block; font-size: clamp(29px, 5vw, 49px); line-height: 1.1; font-family: "Source Code Pro", monospace; }
+    .big-number small { color: var(--muted); }
+    .old-n { background: var(--red-soft); }
+    .new-n { background: var(--green-soft); }
+    .vs { font-weight: 900; color: var(--muted); }
+
+    .result-table { width: 100%; border-collapse: separate; border-spacing: 0; overflow: hidden; border: 1px solid var(--line); border-radius: 15px; background: white; }
+    .result-table th, .result-table td { padding: 14px 16px; border-bottom: 1px solid var(--line); text-align: right; }
+    .result-table th:first-child, .result-table td:first-child { text-align: left; }
+    .result-table thead { background: #edf2f8; }
+    .result-table tr:last-child td { border-bottom: 0; }
+    .good { color: var(--green); font-weight: 800; }
+    .bad { color: var(--red); font-weight: 800; }
+
+    .mini-chart { display: grid; gap: 12px; margin-top: 20px; }
+    .chart-row { display: grid; grid-template-columns: 150px 1fr 60px; gap: 12px; align-items: center; font-size: 13px; }
+    .chart-track { height: 25px; background: #eef2f7; border-radius: 7px; overflow: hidden; }
+    .chart-bar { height: 100%; display: flex; align-items: center; justify-content: flex-end; padding-right: 7px; color: white; font-size: 11px; font-weight: 800; }
+    .redbar { background: linear-gradient(90deg, #f1848c, var(--red)); }
+    .greenbar { background: linear-gradient(90deg, #51c9a6, var(--green)); }
+    .bluebar { background: linear-gradient(90deg, #7c9df2, var(--blue)); }
+
+    .walk { display: grid; gap: 11px; }
+    .walk-row { display: grid; grid-template-columns: 44px 1fr; gap: 14px; align-items: start; }
+    .walk-dot { width: 39px; height: 39px; display: grid; place-items: center; border: 2px solid var(--blue); border-radius: 50%; color: var(--blue); background: white; font-family: "Source Code Pro", monospace; font-weight: 700; }
+    .walk-content { padding: 6px 0 21px; border-bottom: 1px solid var(--line); }
+    .walk-content b { display: block; margin-bottom: 3px; }
+    .walk-content span { color: var(--muted); }
+
+    .steps { counter-reset: repair; display: grid; gap: 13px; }
+    .repair { counter-increment: repair; background: white; border: 1px solid var(--line); border-radius: 15px; padding: 17px 19px 17px 64px; position: relative; }
+    .repair::before { content: counter(repair); position: absolute; left: 18px; top: 16px; width: 30px; height: 30px; display: grid; place-items: center; border-radius: 9px; background: var(--blue); color: white; font: 700 14px "Source Code Pro", monospace; }
+    .repair b { display: block; }
+    .repair span { color: var(--muted); font-size: 14px; }
+
+    .note { background: var(--yellow-soft); border: 1px solid #efd88e; border-radius: 15px; padding: 17px 20px; color: #6e5414; }
+    .note strong { color: #4f3900; }
+    footer { padding: 5px 0 60px; color: var(--muted); font-size: 13px; }
+
+    @media (max-width: 800px) {
+      .toc-grid, .grid-2, .grid-3 { grid-template-columns: 1fr; }
+      .toc a { border-right: 0; }
+      .flow { grid-template-columns: 1fr; gap: 8px; }
+      .flow-arrow { transform: rotate(90deg); height: 38px; }
+      .inside { margin-left: 0; }
+      .verdict { grid-template-columns: 1fr; }
+      .counter { grid-template-columns: 1fr; }
+      .vs { text-align: center; }
+      .chart-row { grid-template-columns: 105px 1fr 45px; }
+      .neuron-demo { grid-template-columns: 1fr; }
+      .neuron-arrow { transform: rotate(90deg); }
+    }
+  </style>
+</head>
+<body>
+  <header class="hero wrap">
+    <div class="eyebrow">🔎 DQN FAILURE ANALYSIS</div>
+    <h1>なぜポケモンAIの<br>勝率は伸びなかったのか</h1>
+    <p class="subtitle">自作版とAI生成版をコード・実験結果・学習方法から比較した、やさしい図解</p>
+    <div class="commit">
+      <span class="pill">対象: pokemon_ai HEAD 7db12d1</span>
+      <span class="pill">比較: sandbox/20260921_160548</span>
+      <span class="pill">テーマ: 深層強化学習（DQN）</span>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <div class="verdict">
+      <div class="stamp">結論</div>
+      <div>
+        <h2>原因は「努力不足」ではなく、ものさしと学習装置の設計だった</h2>
+        <p><strong>勝率を測る相手が途中で強くなり</strong>、さらに<strong>ニューラルネットが盤面を見分けられない状態</strong>になった。単純に学習回数を増やすだけでは直りにくい。</p>
+      </div>
+    </div>
+
+    <nav class="toc" aria-label="目次">
+      <div class="toc-head">目次</div>
+      <div class="toc-grid">
+        <a href="#goal">1. やりたかったこと</a>
+        <a href="#comparison">2. 2つの実装の違い</a>
+        <a href="#failures">3. 失敗した4つの理由</a>
+        <a href="#walkthrough">4. コードの動き</a>
+        <a href="#experiment">5. 実験で確かめたこと</a>
+        <a href="#repair">6. どう直せばよいか</a>
+      </div>
+    </nav>
+
+    <section id="goal">
+      <div class="section-no">01 / BACKGROUND</div>
+      <h2 class="section-title">やりたかったこと</h2>
+      <p class="lead">AIに対戦を何度も経験させ、「この盤面なら、どの技・交代が勝ちにつながるか」を自分で学ばせるプロジェクトです。</p>
+
+      <div class="flow" aria-label="DQNの基本的な流れ">
+        <div class="flow-box"><div class="icon">🎮</div><b>盤面を見る</b><small>HP・ポケモン・技</small></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box"><div class="icon">🧠</div><b>行動を選ぶ</b><small>攻撃する？ 交代する？</small></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box"><div class="icon">🏅</div><b>点数をもらう</b><small>勝利 +1、敗北 −1 など</small></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box"><div class="icon">📚</div><b>次に活かす</b><small>よい行動の評価を上げる</small></div>
+      </div>
+
+      <div class="grid-3" style="margin-top:20px">
+        <article class="card"><div class="icon">🧩</div><h3>状態（State）</h3><p>今の対戦状況を数字の並びにしたもの。人間でいう「盤面を見る」に相当します。</p></article>
+        <article class="card"><div class="icon">⚡</div><h3>行動（Action）</h3><p>技を使う、控えのポケモンに交代する、という選択肢です。</p></article>
+        <article class="card"><div class="icon">📈</div><h3>Q値（Q-value）</h3><p>「この状況でこの行動をすると、将来どれくらい得か」の予想点です。</p></article>
+      </div>
+    </section>
+
+    <section id="comparison">
+      <div class="section-no">02 / COMPARISON</div>
+      <h2 class="section-title">似たルールでも、難しさは同じではない</h2>
+      <p class="lead">AI生成版は、まず学習できることを確認するために問題をかなり小さくしています。自作版は最初から難しい条件に挑戦していました。</p>
+
+      <div class="grid-2">
+        <article class="card arena mine">
+          <div class="arena-head"><h3>自作版 HEAD</h3><span class="tag">難しい</span></div>
+          <div class="arena-body">
+            <div class="teamline"><span class="mon">⚡ Jolteon ×0〜3</span><span class="mon">🪨 Rhydon ×0〜3</span><span class="mon">💧 Starmie ×0〜3</span></div>
+            <ul class="spec-list">
+              <li><b>チーム</b><span>9体から毎回6体を抽選</span></li>
+              <li><b>行動</b><span>10種類</span></li>
+              <li><b>入力</b><span>84個の生の数値</span></li>
+              <li><b>ネットワーク</b><span>10 × 10</span></li>
+              <li><b>相手</b><span>途中で種類が変わる</span></li>
+            </ul>
+          </div>
+        </article>
+
+        <article class="card arena ai">
+          <div class="arena-head"><h3>AI生成版</h3><span class="tag">学習しやすい</span></div>
+          <div class="arena-body">
+            <div class="teamline"><span class="mon">🪨 Rhydon</span><span class="mon">💧 Starmie</span><span class="mon">⚡ Zapdos</span></div>
+            <ul class="spec-list">
+              <li><b>チーム</b><span>毎回同じ3体</span></li>
+              <li><b>行動</b><span>5種類</span></li>
+              <li><b>入力</b><span>19個、ほぼ0〜1</span></li>
+              <li><b>ネットワーク</b><span>128 × 128</span></li>
+              <li><b>相手</b><span>自己対戦＋過去モデル</span></li>
+            </ul>
+          </div>
+        </article>
+      </div>
+      <div class="note" style="margin-top:18px"><strong>大事な注意：</strong> AI生成版の高い勝率は本物ですが、「まったく同じ問題を解いて圧勝した」という比較ではありません。まず成功しやすい小さな問題にしたこと自体が、よい設計です。</div>
+    </section>
+
+    <section id="failures">
+      <div class="section-no">03 / ROOT CAUSES</div>
+      <h2 class="section-title">失敗した4つの大きな理由</h2>
+      <p class="lead">コードを読んだ結果と、実際に学習を再現した結果から、特に影響の大きい順に整理します。</p>
+
+      <article class="failure">
+        <div class="failure-head"><div class="num">01</div><div><h3>勝率を測る「ものさし」が途中で変わった</h3><p class="summary">序盤は弱い相手、終盤は強い相手。これでは前後の勝率を直接比べられません。</p></div></div>
+        <div class="inside">
+          <span class="path">pokemon_ai/dqn/value_function_agent.py:103</span>
+          <pre><code class="language-python"># 学習が進むほど JustAttackPlayer が選ばれやすくなる
+if episodes / max_episodes &lt; random():
+    self.opponent = StupidRandomPlayer(build_random_team())
+else:
+    self.opponent = JustAttackPlayer(build_random_team())</code></pre>
+          <div class="timeline">
+            <div class="time random">序盤：ほぼランダム相手<br>無駄な交代が多い</div>
+            <div class="time attack">終盤：ほぼ攻撃相手<br>毎ターンダメージ</div>
+          </div>
+          <div class="scale"></div>
+          <div class="caption">同じ走者なのに、途中から上り坂に変えてタイムを比較しているようなもの。</div>
+        </div>
+      </article>
+
+      <article class="failure">
+        <div class="failure-head"><div class="num">02</div><div><h3>入力の大きさがバラバラで、神経細胞が停止した</h3><p class="summary">0/1のフラグとHP 413をそのまま混ぜたため、ネットワークが状態の違いを読めなくなりました。</p></div></div>
+        <div class="inside">
+          <span class="path">pokemon_ai/simulator/pokedex.py:39–43</span>
+          <div class="input-bars">
+            <div class="input-row"><span>アクティブ</span><div class="bar-track"><div class="bar b1"></div></div><b>1</b></div>
+            <div class="input-row"><span>技ID</span><div class="bar-track"><div class="bar b9"></div></div><b>9</b></div>
+            <div class="input-row"><span>ポケモンID</span><div class="bar-track"><div class="bar b135"></div></div><b>135</b></div>
+            <div class="input-row"><span>HP</span><div class="bar-track"><div class="bar b413"></div></div><b>413</b></div>
+          </div>
+          <div class="neuron-demo">
+            <div class="neuron-side">84個の生データ<br><b>0, 1, 9, 135, 413…</b></div>
+            <div class="neuron-arrow">→</div>
+            <div class="neuron-side dead">ReLUの第1層<br><b>全10個が停止</b><br><small>どの盤面でも同じ出力</small></div>
+          </div>
+          <div class="caption" style="margin-top:10px">再現実験では、異なる10個の盤面すべてでQ値が完全に同じになりました。AI生成版はHPを「残りHP ÷ 最大HP」にして0〜1へ揃えています。</div>
+        </div>
+      </article>
+
+      <article class="failure">
+        <div class="failure-head"><div class="num">03</div><div><h3>実行できない行動まで「最高の未来」として採点した</h3><p class="summary">Q値の最大を取るとき、瀕死のポケモンへの交代などを除外していません。</p></div></div>
+        <div class="inside">
+          <span class="path">pokemon_ai/dqn/value_function_agent.py:123</span>
+          <pre><code class="language-python"># future には合法・違法を含む10行動の予想が入っている
+reward += GAMMA * np.max(future[i])</code></pre>
+          <div class="actions">
+            <span class="action legal">技0: 0.6</span>
+            <span class="action legal">技1: 0.8</span>
+            <span class="action illegal maxpick">瀕死へ交代: 9.9 ← 最大</span>
+            <span class="action illegal">自分自身へ交代: 2.1</span>
+          </div>
+          <p class="caption">本当は選べない「9.9」を正解として学習すると、Q値が現実から離れていきます。AI生成版は <code>next_mask</code> で違法行動を最大値の候補から外します。</p>
+          <pre><code class="language-python"># AI生成版
+next_q = np.where(next_masks, next_q, -np.inf)
+best_next = next_q.max(axis=1)</code></pre>
+        </div>
+      </article>
+
+      <article class="failure">
+        <div class="failure-head"><div class="num">04</div><div><h3>1試合に1回しか学習しなかった</h3><p class="summary">経験は何十手も集めるのに、ニューラルネットの更新は試合終了後の1回だけです。</p></div></div>
+        <div class="inside">
+          <span class="path">pokemon_ai/dqn/trainer.py:84–85</span>
+          <pre><code class="language-python"># while（対戦）が全部終わってから、1回だけ更新
+if len(self.experiences) &gt; 64:
+    self.agent.update(sample(self.experiences, 64))</code></pre>
+          <div class="counter" style="margin-top:18px">
+            <div class="big-number old-n"><strong>約 1,000</strong><small>自作版：1,000試合の更新回数</small></div>
+            <div class="vs">VS</div>
+            <div class="big-number new-n"><strong>168,625</strong><small>AI版：4,000試合の更新回数</small></div>
+          </div>
+          <p class="caption" style="margin-top:11px">AI生成版は経験を1つ保存するたびに学習します。また、一定期間固定した「答え用ネットワーク（target network）」を持ち、正解が毎回動くのを抑えています。</p>
+        </div>
+      </article>
+    </section>
+
+    <section id="walkthrough">
+      <div class="section-no">04 / CODE WALKTHROUGH</div>
+      <h2 class="section-title">自作コードの1ターンを追いかける</h2>
+      <p class="lead">どこで問題が入るのかを、実際の処理順に見てみます。</p>
+
+      <div class="grid-2">
+        <div class="card">
+          <h3 style="margin-bottom:20px">現在の処理</h3>
+          <div class="walk">
+            <div class="walk-row"><div class="walk-dot">1</div><div class="walk-content"><b>盤面を84個の数字にする</b><span>IDやHPをそのまま入力。大きさが揃っていない。</span></div></div>
+            <div class="walk-row"><div class="walk-dot">2</div><div class="walk-content"><b>10行動のQ値を予想</b><span>ε=0.2なので、学習の最後まで20%はランダム。</span></div></div>
+            <div class="walk-row"><div class="walk-dot">3</div><div class="walk-content"><b>対戦を1ターン進める</b><span>与えた・受けたダメージと勝敗から報酬を作る。</span></div></div>
+            <div class="walk-row"><div class="walk-dot">4</div><div class="walk-content"><b>経験を最大1,024件保存</b><span>状態、行動、報酬、次の状態を記録。</span></div></div>
+            <div class="walk-row"><div class="walk-dot">5</div><div class="walk-content"><b>試合終了後に1回更新</b><span>違法行動を含む最大Q値を答えに使う。</span></div></div>
+          </div>
+        </div>
+
+        <div class="card" style="border-color:#a7dfce; background:#fbfffd">
+          <h3 style="margin-bottom:20px">AI生成版で追加された安全装置</h3>
+          <div class="walk">
+            <div class="walk-row"><div class="walk-dot">✓</div><div class="walk-content"><b>0〜1中心の入力</b><span>HP割合、生存フラグ、選出中フラグで表現。</span></div></div>
+            <div class="walk-row"><div class="walk-dot">✓</div><div class="walk-content"><b>合法行動マスク</b><span>行動時だけでなく、次のQ値の計算にも利用。</span></div></div>
+            <div class="walk-row"><div class="walk-dot">✓</div><div class="walk-content"><b>Target Network</b><span>少し古いコピーを正解計算に使い、学習を安定化。</span></div></div>
+            <div class="walk-row"><div class="walk-dot">✓</div><div class="walk-content"><b>経験ごとに更新</b><span>試合中にも何度もミニバッチ学習する。</span></div></div>
+            <div class="walk-row"><div class="walk-dot">✓</div><div class="walk-content"><b>固定テスト</b><span>学習とは別に、同じ基準で200戦ずつ評価。</span></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="note" style="margin-top:19px"><strong>もう1つの問題：</strong> 自作版の <code>replay</code> は、保存モデルを読み込んだあとも <code>Trainer.train()</code> を呼びます。つまり「テスト」のつもりでもモデルを更新してしまい、純粋な評価になっていません。</div>
+    </section>
+
+    <section id="experiment">
+      <div class="section-no">05 / EXPERIMENT</div>
+      <h2 class="section-title">実際に動かして確かめた結果</h2>
+      <p class="lead">乱数を固定し、自作版を1,000試合学習。その後、学習を止めて同じ種類の相手と各300戦しました。</p>
+
+      <div class="grid-2">
+        <div class="card">
+          <h3>画面に出た「学習中の勝率」</h3>
+          <div class="mini-chart">
+            <div class="chart-row"><span>100話時点</span><div class="chart-track"><div class="chart-bar redbar" style="width:60%">60%</div></div><b>60%</b></div>
+            <div class="chart-row"><span>900話時点</span><div class="chart-track"><div class="chart-bar redbar" style="width:20%">20%</div></div><b>20%</b></div>
+            <div class="chart-row"><span>全体</span><div class="chart-track"><div class="chart-bar redbar" style="width:37%">37%</div></div><b>37%</b></div>
+          </div>
+          <p class="caption" style="margin-top:16px">下がって見える。ただし、後半ほど相手が攻撃型になるため、この数字だけでは学習の成否を判定できません。</p>
+        </div>
+
+        <div class="card">
+          <h3>相手を固定した別テスト</h3>
+          <div class="mini-chart">
+            <div class="chart-row"><span>学習前 vs Random</span><div class="chart-track"><div class="chart-bar bluebar" style="width:4%"></div></div><b>4.0%</b></div>
+            <div class="chart-row"><span>学習後 vs Random</span><div class="chart-track"><div class="chart-bar greenbar" style="width:76.7%">76.7%</div></div><b>76.7%</b></div>
+            <div class="chart-row"><span>学習後 vs Attack</span><div class="chart-track"><div class="chart-bar redbar" style="width:3.7%"></div></div><b>3.7%</b></div>
+          </div>
+          <p class="caption" style="margin-top:16px">ランダム相手の弱点は覚えた一方、攻撃する相手にはほぼ勝てませんでした。</p>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:20px">
+        <h3>保存済みAI生成モデルを1,000戦ずつ再評価</h3>
+        <table class="result-table" aria-label="AI生成モデルの評価結果">
+          <thead><tr><th>対戦相手</th><th>勝ち</th><th>負け</th><th>勝率</th></tr></thead>
+          <tbody>
+            <tr><td>RandomAgent</td><td>922</td><td>78</td><td class="good">92.2%</td></tr>
+            <tr><td>GreedyAgent</td><td>992</td><td>8</td><td class="good">99.2%</td></tr>
+          </tbody>
+        </table>
+        <p class="caption" style="margin-top:12px">この結果はREADMEの自己申告だけでなく、保存モデルを別途読み込んだ評価でも確認しました。ただし、AI版は簡略化された別ルールです。</p>
+      </div>
+    </section>
+
+    <section id="repair">
+      <div class="section-no">06 / REPAIR PLAN</div>
+      <h2 class="section-title">直すなら、この順番</h2>
+      <p class="lead">いきなり6対6を完成させず、小さな成功を確認してから難しくします。</p>
+
+      <div class="steps">
+        <div class="repair"><b>学習と評価を完全に分ける</b><span>評価中は更新なし・探索なし。固定相手、固定乱数、先攻後攻を半分ずつにする。</span></div>
+        <div class="repair"><b>入力を0〜1付近に揃える</b><span>HPは割合、種類や技はone-hot表現。ID番号を「大小に意味がある数」として渡さない。</span></div>
+        <div class="repair"><b>違法行動を2か所で隠す</b><span>行動選択時と、次状態の最大Q値を計算するときの両方にマスクを使う。</span></div>
+        <div class="repair"><b>Target Networkを入れる</b><span>学習中のネットワーク自身を、その瞬間の正解として使わない。</span></div>
+        <div class="repair"><b>1手ごとに学習する</b><span>大きめのリプレイバッファから64件ほど取り、試合中にも更新する。</span></div>
+        <div class="repair"><b>まず固定3対3で成功させる</b><span>グラフで改善を確認してから、技数、ランダムチーム、6対6を1つずつ追加する。</span></div>
+        <div class="repair"><b>自己対戦には過去モデルを混ぜる</b><span>最新の自分だけを相手にすると戦略がぐるぐる変わるため、過去のスナップショットも使う。</span></div>
+      </div>
+
+      <div class="verdict" style="margin-top:28px">
+        <div class="stamp" style="background:linear-gradient(135deg,#3bc89c,#118967)">要点</div>
+        <div>
+          <h2>「もっと学習」より先に「正しく測る・正しく入力する」</h2>
+          <p>自作版は完全に何も学べなかったわけではありません。ランダム相手には改善しました。しかし、評価方法がそれを隠し、ネットワークの停止と不安定なQ学習が本格的な戦略獲得を妨げました。</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="wrap">
+    <p>Analysis scope: <code>pokemon_ai@7db12d1</code> / comparison: <code>/home/kazuya/sandbox/20260921_160548</code></p>
+  </footer>
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.12.0/styles/default.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.12.0/highlight.min.js"></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.12.0/languages/rust.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.12.0/languages/typescript.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.12.0/languages/css.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.12.0/languages/json.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.12.0/languages/yaml.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.12.0/languages/bash.min.js"></script>
+
+  <script>hljs.highlightAll();</script>
+</body>
+</html>

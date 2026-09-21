@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ポケモン自己対戦DQN ぜんぶ図解</title>
+<meta property="og:title" content="ポケモン自己対戦DQN ぜんぶ図解" />
+<meta name="description" content="ゼロから書いた初代ポケモンのバトルエンジンと、自分対自分の対戦だけで強くなるDQN（深層Q学習）の仕組みを、高校生向けに図で解説します。" />
+<meta property="og:description" content="ゼロから書いた初代ポケモンのバトルエンジンと、自分対自分の対戦だけで強くなるDQN（深層Q学習）の仕組みを、高校生向けに図で解説します。" />
+<meta property="og:type" content="article" />
+<link rel="icon" href="/favicon.ico" />
+
+<style>
+  :root{
+    --bg:#f6f7fb; --card:#ffffff; --ink:#1b2333; --sub:#5b6478;
+    --line:#dfe3ed; --accent:#4c6ef5; --accent2:#f76707;
+    --green:#0ca678; --red:#e03131; --purple:#7048e8; --yellow:#f59f00;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,system-ui,-apple-system,sans-serif;
+    line-height:1.85; font-size:16px;
+  }
+  .wrap{max-width:920px; margin:0 auto; padding:0 20px 100px}
+
+  header.hero{
+    background:linear-gradient(135deg,#2b3a67 0%,#4c6ef5 55%,#7048e8 100%);
+    color:#fff; padding:64px 20px 56px; margin-bottom:38px;
+  }
+  header.hero .inner{max-width:920px; margin:0 auto}
+  header.hero h1{font-size:40px; line-height:1.3; margin:0 0 12px; letter-spacing:.02em}
+  header.hero .sub{font-size:17px; opacity:.92; margin:0}
+  header.hero .tags{margin-top:22px; display:flex; gap:8px; flex-wrap:wrap}
+  header.hero .tags span{
+    background:rgba(255,255,255,.18); border:1px solid rgba(255,255,255,.35);
+    padding:4px 12px; border-radius:999px; font-size:13px;
+  }
+
+  nav.toc{
+    background:var(--card); border:1px solid var(--line); border-radius:14px;
+    padding:22px 26px; margin-bottom:44px; box-shadow:0 1px 3px rgba(20,30,60,.05);
+  }
+  nav.toc h2{margin:0 0 10px; font-size:15px; color:var(--sub); letter-spacing:.12em}
+  nav.toc ol{margin:0; padding-left:22px}
+  nav.toc li{margin:5px 0}
+  nav.toc a{color:var(--ink); text-decoration:none; border-bottom:1px dotted #aab}
+  nav.toc a:hover{color:var(--accent); border-bottom-color:var(--accent)}
+
+  section{margin-bottom:56px; scroll-margin-top:16px}
+  h2.sec{
+    font-size:26px; margin:0 0 6px; padding-left:14px;
+    border-left:6px solid var(--accent); line-height:1.4;
+  }
+  h2.sec .num{color:var(--accent); font-size:15px; display:block; letter-spacing:.14em}
+  h3{font-size:19px; margin:32px 0 10px; color:#2b3550}
+  p{margin:12px 0}
+
+  .card{
+    background:var(--card); border:1px solid var(--line); border-radius:14px;
+    padding:22px 26px; margin:20px 0; box-shadow:0 1px 3px rgba(20,30,60,.05);
+  }
+  .note{border-left:5px solid var(--yellow); background:#fff9e6; border-color:#f3e3b5}
+  .tip{border-left:5px solid var(--green); background:#e9fbf5; border-color:#bde9da}
+
+  figure{margin:24px 0; text-align:center}
+  figure svg{max-width:100%; height:auto}
+  figcaption{font-size:13.5px; color:var(--sub); margin-top:10px}
+
+  table{border-collapse:collapse; width:100%; font-size:14.5px; margin:16px 0; background:#fff}
+  th,td{border:1px solid var(--line); padding:9px 12px; text-align:left}
+  th{background:#eef1f8; font-weight:600}
+  td.num,th.num{text-align:right; font-variant-numeric:tabular-nums}
+
+  code{
+    background:#eef1f7; border-radius:5px; padding:1px 6px;
+    font-family:"Source Code Pro",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+    font-size:13px;
+  }
+  pre{
+    border-radius:12px; overflow-x:auto; margin:18px 0;
+    font-size:13px; line-height:1.65;
+  }
+  pre code{background:none; padding:0; font-size:13px}
+  .filename{
+    font-family:"Source Code Pro",monospace; font-size:12.5px; color:#fff;
+    background:#2b3550; display:inline-block; padding:4px 12px;
+    border-radius:8px 8px 0 0; margin-bottom:-14px; position:relative; z-index:1;
+  }
+
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:18px}
+  @media(max-width:720px){.grid2{grid-template-columns:1fr}}
+
+  .obs{display:flex; flex-wrap:wrap; gap:5px; margin:14px 0; justify-content:center}
+  .obs .cell{
+    width:60px; height:46px; border-radius:7px; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; font-size:10.5px; line-height:1.25;
+    border:1px solid rgba(0,0,0,.08); font-family:"Source Code Pro",monospace;
+  }
+  .obs .me{background:#dbe4ff; color:#2b3a8f}
+  .obs .you{background:#ffe8cc; color:#8a4b06}
+  .obs .ph{background:#e6fcf5; color:#0b7285}
+
+  .kpi{display:flex; gap:14px; flex-wrap:wrap; margin:18px 0}
+  .kpi div{
+    flex:1 1 180px; background:#fff; border:1px solid var(--line);
+    border-radius:12px; padding:16px 18px;
+  }
+  .kpi b{display:block; font-size:30px; line-height:1.2; color:var(--accent)}
+  .kpi small{color:var(--sub); font-size:13px}
+
+  ul.clean{padding-left:22px}
+  ul.clean li{margin:7px 0}
+  .hl{background:linear-gradient(transparent 62%, #ffe066 62%); font-weight:600}
+  footer{color:var(--sub); font-size:13.5px; text-align:center; padding-top:30px; border-top:1px solid var(--line)}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="inner">
+    <h1>自分と対戦して強くなるポケモンAI</h1>
+    <p class="sub">初代ポケモンのバトルを自作して、深層Q学習（DQN）でゼロから戦い方を覚えさせた話 — 全部のしくみを図で解説</p>
+    <div class="tags">
+      <span>Python</span><span>強化学習 / DQN</span><span>self-play</span>
+      <span>ゲームエンジン自作</span><span>約1,500行</span>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+<nav class="toc">
+  <h2>もくじ</h2>
+  <ol>
+    <li><a href="#s1">このプロジェクトは何をしたのか</a></li>
+    <li><a href="#s2">舞台：3匹だけの「三すくみ」バトル</a></li>
+    <li><a href="#s3">バトルエンジン ― ルールをコードにする</a></li>
+    <li><a href="#s4">AIの目と手 ― 観測19個・行動5個</a></li>
+    <li><a href="#s5">DQNのキモ ― 「Q値」って何？</a></li>
+    <li><a href="#s6">報酬のつけ方 ― 勝ち負け＋HP差</a></li>
+    <li><a href="#s7">自己対戦ループ ― 1エピソードの流れ</a></li>
+    <li><a href="#s8">「リーグ」で過去の自分とも戦う</a></li>
+    <li><a href="#s9">学習結果 ― グラフと、暴れる勝率のわけ</a></li>
+    <li><a href="#s10">ファイル構成と動かし方</a></li>
+  </ol>
+</nav>
+
+<!-- ================================================= -->
+<section id="s1">
+  <h2 class="sec"><span class="num">SECTION 01</span>このプロジェクトは何をしたのか</h2>
+
+  <p>やったことを一言で言うと、<span class="hl">「ポケモンバトルのルールを自分で書いて、そこで戦うAIを、人間の対戦データをいっさい使わずに、AI同士の対戦だけで育てた」</span>です。</p>
+
+  <p>ポイントは <b>全部スクラッチ（ゼロから手書き）</b> だということ。バトルエンジンも、学習アルゴリズムも、経験を貯めるメモリも自分で書いています。使っている外部ライブラリは numpy と、ニューラルネットの部分に scikit-learn の <code>MLPRegressor</code> だけ。PyTorch も Gymnasium も、RL フレームワークは一切使っていません。</p>
+
+  <div class="kpi">
+    <div><b>1,518</b><small>行（テスト込み）</small></div>
+    <div><b>54</b><small>個のテスト（pytest）</small></div>
+    <div><b>4,000</b><small>エピソード ≒ 12分で学習完了</small></div>
+    <div><b>0</b><small>件の人間の対戦データ</small></div>
+  </div>
+
+  <h3>なぜ「自己対戦（self-play）」なのか</h3>
+  <p>囲碁の AlphaGo Zero が有名にしたやり方です。強い教師データが無くても、<b>AIが自分のコピーと何万回も対戦して、勝った手を強化し、負けた手を弱める</b>ことを繰り返すと、勝手に強くなっていきます。相手も同時に強くなるので、自動的に「ちょうどいい難易度の練習相手」が無限に湧いてくる、というのが美味しいところです。</p>
+
+  <figure>
+    <svg viewBox="0 0 760 210" xmlns="http://www.w3.org/2000/svg" font-family="sans-serif">
+      <rect x="20" y="55" width="160" height="100" rx="12" fill="#dbe4ff" stroke="#4c6ef5" stroke-width="2"/>
+      <text x="100" y="95" text-anchor="middle" font-size="15" font-weight="bold" fill="#2b3a8f">ニューラルネット</text>
+      <text x="100" y="118" text-anchor="middle" font-size="13" fill="#3b4a7f">（1つだけ）</text>
+      <text x="100" y="138" text-anchor="middle" font-size="12" fill="#5b6478">= 頭脳</text>
+
+      <path d="M185 80 C 240 45, 270 45, 315 70" stroke="#4c6ef5" stroke-width="2.5" fill="none" marker-end="url(#a1)"/>
+      <path d="M185 130 C 240 165, 270 165, 315 140" stroke="#4c6ef5" stroke-width="2.5" fill="none" marker-end="url(#a1)"/>
+      <text x="250" y="38" text-anchor="middle" font-size="12" fill="#4c6ef5">P1として指す</text>
+      <text x="250" y="186" text-anchor="middle" font-size="12" fill="#4c6ef5">P2としても指す</text>
+
+      <rect x="320" y="55" width="160" height="100" rx="12" fill="#fff4e6" stroke="#f76707" stroke-width="2"/>
+      <text x="400" y="95" text-anchor="middle" font-size="15" font-weight="bold" fill="#8a4b06">バトル1戦</text>
+      <text x="400" y="118" text-anchor="middle" font-size="13" fill="#8a4b06">自分 vs 自分</text>
+      <text x="400" y="138" text-anchor="middle" font-size="12" fill="#5b6478">勝ち / 負け が出る</text>
+
+      <path d="M485 105 L 555 105" stroke="#0ca678" stroke-width="2.5" fill="none" marker-end="url(#a2)"/>
+      <text x="520" y="96" text-anchor="middle" font-size="12" fill="#0ca678">経験</text>
+
+      <rect x="560" y="55" width="170" height="100" rx="12" fill="#e9fbf5" stroke="#0ca678" stroke-width="2"/>
+      <text x="645" y="95" text-anchor="middle" font-size="15" font-weight="bold" fill="#0b7285">学習して更新</text>
+      <text x="645" y="118" text-anchor="middle" font-size="13" fill="#0b7285">Q値を直す</text>
+
+      <path d="M645 160 C 645 200, 100 205, 100 162" stroke="#7048e8" stroke-width="2.5" fill="none" stroke-dasharray="6 4" marker-end="url(#a3)"/>
+      <text x="380" y="205" text-anchor="middle" font-size="12.5" fill="#7048e8">強くなった頭脳で、また対戦する（これをずっと繰り返す）</text>
+
+      <defs>
+        <marker id="a1" markerWidth="9" markerHeight="9" refX="7" refY="3.2" orient="auto"><path d="M0,0 L8,3.2 L0,6.4 z" fill="#4c6ef5"/></marker>
+        <marker id="a2" markerWidth="9" markerHeight="9" refX="7" refY="3.2" orient="auto"><path d="M0,0 L8,3.2 L0,6.4 z" fill="#0ca678"/></marker>
+        <marker id="a3" markerWidth="9" markerHeight="9" refX="7" refY="3.2" orient="auto"><path d="M0,0 L8,3.2 L0,6.4 z" fill="#7048e8"/></marker>
+      </defs>
+    </svg>
+    <figcaption>自己対戦の基本ループ。ネットワークは1つしかなく、それが両サイドを指す。</figcaption>
+  </figure>
+</section>
+
+<!-- ================================================= -->
+<section id="s2">
+  <h2 class="sec"><span class="num">SECTION 02</span>舞台：3匹だけの「三すくみ」バトル</h2>
+
+  <p>本物のポケモンは複雑すぎるので、思い切って削ります。ルールはこれだけ：</p>
+
+  <div class="card">
+    <ul class="clean">
+      <li>初代（赤・緑）の計算式、レベル100、個体値・努力値マックス</li>
+      <li><b>技は必ず当たる</b>（命中率なし）・<b>急所なし</b>・変化技なし・追加効果なし・PP無限</li>
+      <li>両プレイヤーとも<b>まったく同じ3匹</b>を使う。だから決めるのは「誰を先頭に出すか」「いつ誰に交代するか」「どっちの技を使うか」だけ</li>
+      <li>ダメージの乱数（217〜255の揺れ）だけは残したので、同じ手でも結果はブレる</li>
+    </ul>
+  </div>
+
+  <table>
+    <tr><th>ポケモン</th><th>タイプ</th><th class="num">HP</th><th class="num">こうげき</th><th class="num">ぼうぎょ</th><th class="num">とくしゅ</th><th class="num">すばやさ</th><th>技</th></tr>
+    <tr><td><b>サイドン</b></td><td>じめん / いわ</td><td class="num">413</td><td class="num">358</td><td class="num">338</td><td class="num">188</td><td class="num">178</td><td>じしん・いわなだれ</td></tr>
+    <tr><td><b>スターミー</b></td><td>みず / エスパー</td><td class="num">323</td><td class="num">248</td><td class="num">268</td><td class="num">298</td><td class="num">328</td><td>なみのり・ふぶき</td></tr>
+    <tr><td><b>サンダー</b></td><td>でんき / ひこう</td><td class="num">383</td><td class="num">278</td><td class="num">268</td><td class="num">348</td><td class="num">298</td><td>ドリルくちばし・10まんボルト</td></tr>
+  </table>
+
+  <h3>この3匹はジャンケンになっている</h3>
+  <p>これがこのプロジェクトのいちばん面白いところです。3匹の相性が<b>きれいな三すくみ（ジャンケン）</b>になるように選ばれています。</p>
+
+  <figure>
+    <svg viewBox="0 0 700 340" xmlns="http://www.w3.org/2000/svg" font-family="sans-serif">
+      <!-- nodes -->
+      <circle cx="350" cy="62" r="52" fill="#dbe4ff" stroke="#4c6ef5" stroke-width="2.5"/>
+      <text x="350" y="58" text-anchor="middle" font-size="15" font-weight="bold" fill="#2b3a8f">スターミー</text>
+      <text x="350" y="78" text-anchor="middle" font-size="11" fill="#3b4a7f">みず/エスパー</text>
+
+      <circle cx="140" cy="258" r="52" fill="#ffe3e3" stroke="#e03131" stroke-width="2.5"/>
+      <text x="140" y="254" text-anchor="middle" font-size="15" font-weight="bold" fill="#a02020">サイドン</text>
+      <text x="140" y="274" text-anchor="middle" font-size="11" fill="#a02020">じめん/いわ</text>
+
+      <circle cx="560" cy="258" r="52" fill="#fff3bf" stroke="#f59f00" stroke-width="2.5"/>
+      <text x="560" y="254" text-anchor="middle" font-size="15" font-weight="bold" fill="#8a5800">サンダー</text>
+      <text x="560" y="274" text-anchor="middle" font-size="11" fill="#8a5800">でんき/ひこう</text>
+
+      <!-- arrows: starmie -> rhydon -->
+      <path d="M305 96 L 185 222" stroke="#4c6ef5" stroke-width="3.5" fill="none" marker-end="url(#b1)"/>
+      <rect x="168" y="132" width="106" height="40" rx="8" fill="#fff" stroke="#4c6ef5"/>
+      <text x="221" y="149" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#2b3a8f">なみのり</text>
+      <text x="221" y="165" text-anchor="middle" font-size="13" font-weight="bold" fill="#e03131">4倍！</text>
+
+      <!-- rhydon -> zapdos -->
+      <path d="M196 272 L 502 272" stroke="#e03131" stroke-width="3.5" fill="none" marker-end="url(#b2)"/>
+      <rect x="297" y="285" width="106" height="40" rx="8" fill="#fff" stroke="#e03131"/>
+      <text x="350" y="302" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#a02020">いわなだれ</text>
+      <text x="350" y="318" text-anchor="middle" font-size="13" font-weight="bold" fill="#e03131">2倍</text>
+
+      <!-- zapdos -> starmie -->
+      <path d="M516 220 L 396 96" stroke="#f59f00" stroke-width="3.5" fill="none" marker-end="url(#b3)"/>
+      <rect x="430" y="132" width="116" height="40" rx="8" fill="#fff" stroke="#f59f00"/>
+      <text x="488" y="149" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#8a5800">10まんボルト</text>
+      <text x="488" y="165" text-anchor="middle" font-size="13" font-weight="bold" fill="#e03131">2倍</text>
+
+      <defs>
+        <marker id="b1" markerWidth="10" markerHeight="10" refX="8" refY="3.5" orient="auto"><path d="M0,0 L9,3.5 L0,7 z" fill="#4c6ef5"/></marker>
+        <marker id="b2" markerWidth="10" markerHeight="10" refX="8" refY="3.5" orient="auto"><path d="M0,0 L9,3.5 L0,7 z" fill="#e03131"/></marker>
+        <marker id="b3" markerWidth="10" markerHeight="10" refX="8" refY="3.5" orient="auto"><path d="M0,0 L9,3.5 L0,7 z" fill="#f59f00"/></marker>
+      </defs>
+    </svg>
+    <figcaption>矢印は「強い」方向。加えて、じしんはサンダーに <b>無効（0倍）</b>、10まんボルトはサイドンに <b>無効（0倍）</b>。</figcaption>
+  </figure>
+
+  <div class="card note">
+    <p style="margin-top:0"><b>これが効いてくる理由</b><br>
+    ジャンケンには「これを出しておけば必ず勝てる手」がありません（＝<b>純粋戦略の均衡が存在しない</b>）。だから自己対戦AIは「グーを覚える→パーを覚える→チョキを覚える→またグー…」と永遠にぐるぐる回ります。あとで出てくる<b>勝率のガタガタ</b>は、AIのバグではなくこのゲームの性質そのものです。</p>
+  </div>
+</section>
+
+<!-- ================================================= -->
+<section id="s3">
+  <h2 class="sec"><span class="num">SECTION 03</span>バトルエンジン ― ルールをコードにする</h2>
+
+  <p><code>pokemon_rl/battle.py</code>（258行）が審判役です。バトルは <b>3つのフェーズ</b> を行き来する状態マシンとして書かれています。</p>
+
+  <figure>
+    <svg viewBox="0 0 760 290" xmlns="http://www.w3.org/2000/svg" font-family="sans-serif">
+      <rect x="40" y="105" width="150" height="72" rx="12" fill="#dbe4ff" stroke="#4c6ef5" stroke-width="2"/>
+      <text x="115" y="134" text-anchor="middle" font-size="15" font-weight="bold" fill="#2b3a8f">lead</text>
+      <text x="115" y="156" text-anchor="middle" font-size="12" fill="#3b4a7f">先発を選ぶ</text>
+
+      <rect x="300" y="105" width="160" height="72" rx="12" fill="#fff4e6" stroke="#f76707" stroke-width="2"/>
+      <text x="380" y="134" text-anchor="middle" font-size="15" font-weight="bold" fill="#8a4b06">move</text>
+      <text x="380" y="156" text-anchor="middle" font-size="12" fill="#8a4b06">技 or 交代（同時選択）</text>
+
+      <rect x="300" y="15" width="160" height="62" rx="12" fill="#f3f0ff" stroke="#7048e8" stroke-width="2"/>
+      <text x="380" y="40" text-anchor="middle" font-size="15" font-weight="bold" fill="#5528c8">replace</text>
+      <text x="380" y="60" text-anchor="middle" font-size="12" fill="#5528c8">倒れた側が次を出す</text>
+
+      <rect x="570" y="105" width="150" height="72" rx="12" fill="#e9fbf5" stroke="#0ca678" stroke-width="2"/>
+      <text x="645" y="134" text-anchor="middle" font-size="15" font-weight="bold" fill="#0b7285">end</text>
+      <text x="645" y="156" text-anchor="middle" font-size="12" fill="#0b7285">勝ち / 負け / 引き分け</text>
+
+      <path d="M192 141 L 296 141" stroke="#5b6478" stroke-width="2" marker-end="url(#c1)"/>
+      <path d="M462 141 L 566 141" stroke="#5b6478" stroke-width="2" marker-end="url(#c1)"/>
+      <text x="514" y="132" text-anchor="middle" font-size="11.5" fill="#5b6478">全滅 or 200ターン</text>
+
+      <path d="M345 103 L 345 80" stroke="#7048e8" stroke-width="2" marker-end="url(#c2)"/>
+      <text x="250" y="96" text-anchor="middle" font-size="11.5" fill="#7048e8">誰かが「ひんし」</text>
+      <path d="M415 79 L 415 102" stroke="#7048e8" stroke-width="2" marker-end="url(#c2)"/>
+      <text x="520" y="96" text-anchor="middle" font-size="11.5" fill="#7048e8">出したら戻る</text>
+
+      <path d="M330 180 C 330 235, 430 235, 430 181" stroke="#f76707" stroke-width="2" fill="none" marker-end="url(#c3)"/>
+      <text x="380" y="252" text-anchor="middle" font-size="12" fill="#8a4b06">毎ターンここをぐるぐる</text>
+
+      <defs>
+        <marker id="c1" markerWidth="9" markerHeight="9" refX="7" refY="3.2" orient="auto"><path d="M0,0 L8,3.2 L0,6.4 z" fill="#5b6478"/></marker>
+        <marker id="c2" markerWidth="9" markerHeight="9" refX="7" refY="3.2" orient="auto"><path d="M0,0 L8,3.2 L0,6.4 z" fill="#7048e8"/></marker>
+        <marker id="c3" markerWidth="9" markerHeight="9" refX="9" refY="3.2" orient="auto"><path d="M0,0 L8,3.2 L0,6.4 z" fill="#f76707"/></marker>
+      </defs>
+    </svg>
+    <figcaption>バトルのフェーズ遷移。<code>Battle.phase</code> がこの4つの値を取る。</figcaption>
+  </figure>
+
+  <h3>1ターンの解決順（ここ大事）</h3>
+  <p>本物のポケモンと同じで、両者は<b>相手の手を見ずに同時に</b>選びます。そのうえで：</p>
+  <div class="card">
+    <p style="margin:0"><b>① 交代をする人が先に交代する</b>（だから交代には「相手の技を1発もらう」リスクがある）<br>
+    <b>② 残った攻撃を、すばやさの高い順に処理する</b>（同速ならコイントス）<br>
+    <b>③ 技を出す前に自分が倒れていたら、その攻撃は不発</b></p>
+  </div>
+
+  <div class="filename">pokemon_rl/battle.py</div>
+  <pre><code class="language-python">def _resolve_turn(self, actions: dict[int, int]) -> None:
+    self.turn += 1
+
+    # ① 交代が先に解決される
+    for side in SIDES:
+        if actions[side] >= MOVE_ACTIONS:
+            slot = actions[side] - MOVE_ACTIONS
+            self.active[side] = slot
+
+    # ② 残りの攻撃をすばやさ順に
+    attackers = [side for side in SIDES if actions[side] &lt; MOVE_ACTIONS]
+    for side in self._move_order(attackers):
+        if self.require_active(side).fainted:
+            continue                      # ③ もう倒れていたら不発
+        self._use_move(side, actions[side])</code></pre>
+
+  <h3>ダメージ計算</h3>
+  <p>初代の計算式そのままです。急所と命中判定だけ抜いてあります。</p>
+
+  <div class="filename">pokemon_rl/battle.py</div>
+  <pre><code class="language-python">damage = ((2 * LEVEL // 5 + 2) * move.power * attack // defense) // 50 + 2
+if move.type in attacker.species.types:
+    damage = damage * 3 // 2       # タイプ一致ボーナス（STAB）
+damage = int(damage * effectiveness)   # 0倍 / 0.5倍 / 2倍 / 4倍
+damage = damage * roll // 255          # roll は 217〜255 の乱数</code></pre>
+
+  <p><code>//</code> は整数の割り算です。初代は全部整数で計算していたので、そこも再現しています。最後の <code>roll</code> のおかげで、<b>まったく同じ状況でも約15%ダメージがブレます</b>。これがあるから「たまたま勝った」を学習しないで済む、というのが地味に重要です。</p>
+</section>
+
+<!-- ================================================= -->
+<section id="s4">
+  <h2 class="sec"><span class="num">SECTION 04</span>AIの目と手 ― 観測19個・行動5個</h2>
+
+  <p>AIはバトル画面を見ているわけではありません。<b>19個の数字</b>だけを見て、<b>5つの行動</b>から1つを選びます。ここが「ゲーム」と「機械学習」の接続部分です。</p>
+
+  <h3>目：19次元の観測ベクトル</h3>
+  <div class="card">
+    <div class="obs">
+      <div class="cell me">HP率<br>自1</div><div class="cell me">生存<br>自1</div><div class="cell me">場に<br>自1</div>
+      <div class="cell me">HP率<br>自2</div><div class="cell me">生存<br>自2</div><div class="cell me">場に<br>自2</div>
+      <div class="cell me">HP率<br>自3</div><div class="cell me">生存<br>自3</div><div class="cell me">場に<br>自3</div>
+      <div class="cell you">HP率<br>敵1</div><div class="cell you">生存<br>敵1</div><div class="cell you">場に<br>敵1</div>
+      <div class="cell you">HP率<br>敵2</div><div class="cell you">生存<br>敵2</div><div class="cell you">場に<br>敵2</div>
+      <div class="cell you">HP率<br>敵3</div><div class="cell you">生存<br>敵3</div><div class="cell you">場に<br>敵3</div>
+      <div class="cell ph">交代を<br>迫られ<br>てる?</div>
+    </div>
+    <p style="margin:6px 0 0; font-size:14px; color:var(--sub); text-align:center">6匹 × 3項目（HP割合 / 生きてるか / 場に出てるか）＋ フェーズフラグ1個 ＝ 19</p>
+  </div>
+
+  <p>重要なのは <b>「自分のチームが必ず先に来る」</b> こと。そのおかげで、P1として学んだことがそのままP2としても使えます。1つのネットワークで両サイドを指せるのはこの設計のおかげです（<code>observation(side)</code> が <code>for owner in (side, 1 - side)</code> と書かれている理由）。</p>
+
+  <h3>手：5つの行動と「合法手マスク」</h3>
+  <figure>
+    <svg viewBox="0 0 740 180" xmlns="http://www.w3.org/2000/svg" font-family="sans-serif">
+      <g font-size="13">
+        <rect x="20" y="30" width="120" height="54" rx="9" fill="#dbe4ff" stroke="#4c6ef5"/>
+        <text x="80" y="52" text-anchor="middle" font-weight="bold" fill="#2b3a8f">0: 技1</text>
+        <rect x="150" y="30" width="120" height="54" rx="9" fill="#dbe4ff" stroke="#4c6ef5"/>
+        <text x="210" y="52" text-anchor="middle" font-weight="bold" fill="#2b3a8f">1: 技2</text>
+        <rect x="290" y="30" width="130" height="54" rx="9" fill="#fff4e6" stroke="#f76707"/>
+        <text x="355" y="52" text-anchor="middle" font-weight="bold" fill="#8a4b06">2: 枠0に交代</text>
+        <rect x="430" y="30" width="130" height="54" rx="9" fill="#fff4e6" stroke="#f76707"/>
+        <text x="495" y="52" text-anchor="middle" font-weight="bold" fill="#8a4b06">3: 枠1に交代</text>
+        <rect x="570" y="30" width="130" height="54" rx="9" fill="#fff4e6" stroke="#f76707"/>
+        <text x="635" y="52" text-anchor="middle" font-weight="bold" fill="#8a4b06">4: 枠2に交代</text>
+      </g>
+      <text x="80" y="74" text-anchor="middle" font-size="11" fill="#5b6478">今場に出てる子の技</text>
+      <text x="210" y="74" text-anchor="middle" font-size="11" fill="#5b6478">同上</text>
+
+      <rect x="290" y="105" width="270" height="52" rx="9" fill="#ffe3e3" stroke="#e03131" stroke-dasharray="5 4"/>
+      <text x="425" y="127" text-anchor="middle" font-size="13" font-weight="bold" fill="#a02020">✕ 自分自身 / ひんしの子 には交代できない</text>
+      <text x="425" y="146" text-anchor="middle" font-size="12" fill="#a02020">→ マスクで塞ぐ（選択時も、学習時も）</text>
+      <path d="M355 86 L 370 103" stroke="#e03131" stroke-width="1.8"/>
+      <path d="M495 86 L 470 103" stroke="#e03131" stroke-width="1.8"/>
+    </svg>
+    <figcaption>行動は常に5つだが、そのときの盤面で実際に選べるのはその一部。</figcaption>
+  </figure>
+
+  <p>この「マスク」がこのプロジェクトの隠れた重要ポイントです。<b>行動を選ぶときだけでなく、学習の目標値を計算するときにもマスクを掛けます。</b> 掛け忘れると「もうひんししている子に交代する」という<b>あり得ない手の価値</b>を根拠に学習してしまい、Q値が壊れます。</p>
+
+  <div class="filename">pokemon_rl/agents.py</div>
+  <pre><code class="language-python">def _masked_argmax(values: np.ndarray, mask: np.ndarray) -> int:
+    masked = np.where(mask, values, -np.inf)   # 非合法手を -∞ にする
+    return int(np.argmax(masked))</code></pre>
+</section>
+
+<!-- ================================================= -->
+<section id="s5">
+  <h2 class="sec"><span class="num">SECTION 05</span>DQNのキモ ― 「Q値」って何？</h2>
+
+  <p>Q値とは、ひとことで言えば <span class="hl">「この場面でこの手を打ったら、最終的にどれくらい得するかの見積もり」</span> です。</p>
+
+  <figure>
+    <svg viewBox="0 0 740 260" xmlns="http://www.w3.org/2000/svg" font-family="sans-serif">
+      <!-- input -->
+      <rect x="20" y="70" width="110" height="120" rx="10" fill="#dbe4ff" stroke="#4c6ef5" stroke-width="2"/>
+      <text x="75" y="118" text-anchor="middle" font-size="14" font-weight="bold" fill="#2b3a8f">盤面</text>
+      <text x="75" y="140" text-anchor="middle" font-size="13" fill="#3b4a7f">19個の数字</text>
+
+      <!-- hidden -->
+      <g>
+        <circle cx="230" cy="70" r="12" fill="#e9ecef" stroke="#868e96"/>
+        <circle cx="230" cy="110" r="12" fill="#e9ecef" stroke="#868e96"/>
+        <circle cx="230" cy="150" r="12" fill="#e9ecef" stroke="#868e96"/>
+        <circle cx="230" cy="190" r="12" fill="#e9ecef" stroke="#868e96"/>
+        <circle cx="330" cy="70" r="12" fill="#e9ecef" stroke="#868e96"/>
+        <circle cx="330" cy="110" r="12" fill="#e9ecef" stroke="#868e96"/>
+        <circle cx="330" cy="150" r="12" fill="#e9ecef" stroke="#868e96"/>
+        <circle cx="330" cy="190" r="12" fill="#e9ecef" stroke="#868e96"/>
+      </g>
+      <text x="280" y="228" text-anchor="middle" font-size="12.5" fill="#5b6478">隠れ層 128 × 128（ReLU）</text>
+      <g stroke="#adb5bd" stroke-width=".8" opacity=".75">
+        <path d="M134 110 L218 70"/><path d="M134 110 L218 110"/><path d="M134 130 L218 150"/><path d="M134 130 L218 190"/>
+        <path d="M242 70 L318 110"/><path d="M242 110 L318 70"/><path d="M242 150 L318 190"/><path d="M242 190 L318 150"/>
+        <path d="M242 110 L318 150"/><path d="M242 150 L318 110"/>
+      </g>
+
+      <!-- outputs -->
+      <g font-size="12.5" font-family="'Source Code Pro',monospace">
+        <rect x="430" y="42" width="230" height="26" rx="6" fill="#fff" stroke="#dfe3ed"/>
+        <rect x="430" y="42" width="140" height="26" rx="6" fill="#d3f9d8"/>
+        <text x="436" y="60" fill="#1b2333">技1 → Q = +0.81</text>
+        <text x="672" y="60" font-size="15">👈 これを選ぶ</text>
+
+        <rect x="430" y="76" width="230" height="26" rx="6" fill="#fff" stroke="#dfe3ed"/>
+        <rect x="430" y="76" width="72" height="26" rx="6" fill="#e9f5ec"/>
+        <text x="436" y="94" fill="#1b2333">技2 → Q = +0.34</text>
+
+        <rect x="430" y="110" width="230" height="26" rx="6" fill="#f1f3f5" stroke="#dfe3ed"/>
+        <text x="436" y="128" fill="#adb5bd">枠0 → 非合法（自分）</text>
+
+        <rect x="430" y="144" width="230" height="26" rx="6" fill="#fff" stroke="#dfe3ed"/>
+        <rect x="430" y="144" width="40" height="26" rx="6" fill="#ffe3e3"/>
+        <text x="436" y="162" fill="#1b2333">枠1 → Q = −0.12</text>
+
+        <rect x="430" y="178" width="230" height="26" rx="6" fill="#fff" stroke="#dfe3ed"/>
+        <rect x="430" y="178" width="95" height="26" rx="6" fill="#e9f5ec"/>
+        <text x="436" y="196" fill="#1b2333">枠2 → Q = +0.47</text>
+      </g>
+      <g stroke="#4c6ef5" stroke-width="1" opacity=".55">
+        <path d="M342 110 L426 55"/><path d="M342 110 L426 89"/><path d="M342 150 L426 157"/><path d="M342 150 L426 191"/>
+      </g>
+      <text x="545" y="228" text-anchor="middle" font-size="12.5" fill="#5b6478">出力は5個 ＝ 各行動のQ値。合法手の中で最大を選ぶ</text>
+    </svg>
+    <figcaption>Qネットワーク。盤面を入れると、5つの行動それぞれの「良さの点数」が一度に返ってくる。</figcaption>
+  </figure>
+
+  <h3>学習の式：Q値を「正解」に近づける</h3>
+  <p>正解ラベルなんてどこにも無いのに、どうやって学習するのか。答えは <b>「1手先の自分の予想」を正解の代わりに使う</b>、です。これをベルマン方程式と言います。</p>
+
+  <div class="card tip">
+    <p style="margin:0; text-align:center; font-size:17px">
+      <code style="font-size:15px">Q(今の盤面, 打った手)</code> を<br>
+      <code style="font-size:15px">もらった報酬 + 0.98 × max Q(次の盤面, 合法手すべて)</code> に近づける
+    </p>
+  </div>
+
+  <p>「いま報酬をもらってないけど、次の場面がすごく良さそうなら、いまの手も良かったはず」という理屈でスコアが過去にじわじわ伝わっていきます。<code>0.98</code>（＝<code>gamma</code>）は「先の未来ほど少し割り引く」係数です。</p>
+
+  <div class="filename">pokemon_rl/agents.py — 1回の更新のすべて</div>
+  <pre><code class="language-python">batch = self.buffer.sample(self.batch_size)          # 経験を64件ランダムに取り出す
+
+next_q = self.target_model.predict(next_states)      # ターゲットネットで次の盤面を評価
+next_q = np.where(next_masks, next_q, -np.inf)       # 非合法手を潰す
+best_next = np.where(next_masks.any(axis=1), next_q.max(axis=1), 0.0)
+
+targets_for_action = rewards + np.where(dones, 0.0, self.gamma * best_next)
+
+targets = self.model.predict(states)                 # いまの予想を全部そのまま持ってきて
+targets[rows, actions] = targets_for_action          # 実際に打った手の分だけ差し替える
+self.model.partial_fit(states, targets)              # 1回だけ勾配を流す</code></pre>
+
+  <p><b>「打った手の分だけ差し替える」</b>のがミソです。5つの出力のうち、実際に試した1つしか答え合わせできません。残り4つは自分の予想をそのまま目標にするので、勾配がゼロになり、変化しません。</p>
+
+  <h3>DQNが安定するための3つの仕掛け</h3>
+  <div class="grid2">
+    <div class="card">
+      <h3 style="margin-top:0">① リプレイバッファ</h3>
+      <p style="margin-bottom:0">直近の経験を <b>5万件</b> 貯めておき、そこからランダムに64件取り出して学習。連続した経験だけで学ぶと「似た場面ばかり」で偏るのを防ぐ。</p>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0">② ターゲットネットワーク</h3>
+      <p style="margin-bottom:0">正解を作る用のネットは<b>1,000回に1回だけ</b>コピーして固定する。目標が動き続けると、自分の影を追いかけて発散してしまうため。</p>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0">③ ε（イプシロン）グリーディ</h3>
+      <p style="margin-bottom:0">確率εでわざとランダムな手を打つ。最初は<b>100%ランダム</b>、3万ステップかけて<b>5%</b>まで下げる。知らない手を試さないと、良い手に気づけない。</p>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0">（おまけ）ネットは scikit-learn</h3>
+      <p style="margin-bottom:0"><code>MLPRegressor</code> の <code>partial_fit</code> を1回呼ぶ＝1回の勾配ステップ、と読み替えて使っている。PyTorch なしでDQNが書ける。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================= -->
+<section id="s6">
+  <h2 class="sec"><span class="num">SECTION 06</span>報酬のつけ方 ― 勝ち負け＋HP差</h2>
+
+  <p>いちばん素直な報酬は「勝ったら +1、負けたら −1、引き分け 0」です。でもこれだけだと、<b>1戦40ターン近く指した末にようやく1回だけ点がもらえる</b>ことになり、「どの手が良かったのか」がさっぱり伝わりません（報酬がスパースな問題）。</p>
+
+  <p>そこで <b>報酬シェイピング</b> を足しています：</p>
+
+  <div class="card tip">
+    <p style="margin:0; text-align:center; font-size:16px">報酬 ＝ <b>勝敗（±1）</b> ＋ <code>0.5</code> × <b>HP差の変化量</b></p>
+    <p style="margin:8px 0 0; text-align:center; font-size:13.5px; color:var(--sub)">HP差 =（自分の残りHP合計 − 相手の残りHP合計）÷ 3匹 → −1 〜 +1</p>
+  </div>
+
+  <p>これで「相手に大ダメージを与えた手」はその場ですぐ小さなプラスをもらえます。4倍のなみのりでサイドンを一撃で落とすと、HP差が一気に動くので、<b>そのときの行動のQ値がぐっと上がる</b>わけです。</p>
+
+  <h3>「行動と行動のあいだ」をどう繋ぐか</h3>
+  <p>ここは実装上の地味な落とし穴でした。ポケモンバトルは<b>片側だけが行動する瞬間</b>があります（相手だけがひんしで交代する場面）。つまり、自分の「次の判断」は1ステップ後とは限りません。</p>
+
+  <figure>
+    <svg viewBox="0 0 760 210" xmlns="http://www.w3.org/2000/svg" font-family="sans-serif">
+      <line x1="40" y1="150" x2="720" y2="150" stroke="#adb5bd" stroke-width="2"/>
+      <g font-size="12" fill="#5b6478">
+        <line x1="90" y1="143" x2="90" y2="157" stroke="#868e96" stroke-width="2"/>
+        <line x1="300" y1="143" x2="300" y2="157" stroke="#868e96" stroke-width="2"/>
+        <line x1="500" y1="143" x2="500" y2="157" stroke="#868e96" stroke-width="2"/>
+        <text x="90" y="176" text-anchor="middle">ターンt</text>
+        <text x="300" y="176" text-anchor="middle">相手だけ交代</text>
+        <text x="500" y="176" text-anchor="middle">ターンt+1</text>
+      </g>
+
+      <circle cx="90" cy="150" r="9" fill="#4c6ef5"/>
+      <circle cx="500" cy="150" r="9" fill="#4c6ef5"/>
+      <circle cx="300" cy="150" r="7" fill="#dee2e6" stroke="#adb5bd"/>
+
+      <text x="90" y="128" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#2b3a8f">自分が判断</text>
+      <text x="500" y="128" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#2b3a8f">次に自分が判断</text>
+      <text x="300" y="128" text-anchor="middle" font-size="12" fill="#868e96">自分の出番なし</text>
+
+      <path d="M90 90 L 500 90" stroke="#0ca678" stroke-width="2.5" marker-end="url(#d1)" marker-start="url(#d0)"/>
+      <rect x="205" y="40" width="190" height="40" rx="8" fill="#e9fbf5" stroke="#0ca678"/>
+      <text x="300" y="57" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#0b7285">これで1つのTransition</text>
+      <text x="300" y="73" text-anchor="middle" font-size="11.5" fill="#0b7285">間のHP変動はぜんぶ報酬に入る</text>
+
+      <defs>
+        <marker id="d1" markerWidth="9" markerHeight="9" refX="7" refY="3.2" orient="auto"><path d="M0,0 L8,3.2 L0,6.4 z" fill="#0ca678"/></marker>
+        <marker id="d0" markerWidth="9" markerHeight="9" refX="1" refY="3.2" orient="auto"><path d="M8,0 L0,3.2 L8,6.4 z" fill="#0ca678"/></marker>
+      </defs>
+    </svg>
+    <figcaption>1件の経験は「自分の判断」から「次の自分の判断」までを繋ぐ。途中で何ステップ進んでいてもよい。</figcaption>
+  </figure>
+
+  <p>コードでは各サイドの「まだ閉じていない判断」を <code>pending</code> に持っておき、次の判断が来たときに初めて経験として確定させます。</p>
+
+  <div class="filename">pokemon_rl/selfplay.py</div>
+  <pre><code class="language-python">def push(side, next_state, next_mask, done, terminal_reward=0.0):
+    state, action, hp_diff_before = pending[side]
+    # 「前回判断したとき」からのHP差の動きが、まるごと報酬になる
+    reward = shaping * (battle.hp_diff(side) - hp_diff_before) + terminal_reward
+    learner.remember(Transition(state, action, reward, next_state, next_mask, done))
+    pending[side] = None</code></pre>
+</section>
+
+<!-- ================================================= -->
+<section id="s7">
+  <h2 class="sec"><span class="num">SECTION 07</span>自己対戦ループ ― 1エピソードの流れ</h2>
+
+  <p>ここまでの部品が全部つながります。「1エピソード＝1バトル」で、以下がひたすら4,000回繰り返されます。</p>
+
+  <figure>
+    <svg viewBox="0 0 760 420" xmlns="http://www.w3.org/2000/svg" font-family="sans-serif">
+      <!-- left column boxes -->
+      <rect x="60" y="20" width="250" height="48" rx="10" fill="#dbe4ff" stroke="#4c6ef5" stroke-width="2"/>
+      <text x="185" y="49" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#2b3a8f">① 対戦相手を決める</text>
+
+      <rect x="60" y="92" width="250" height="48" rx="10" fill="#fff4e6" stroke="#f76707" stroke-width="2"/>
+      <text x="185" y="114" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#8a4b06">② 盤面を19個の数字にする</text>
+      <text x="185" y="132" text-anchor="middle" font-size="11.5" fill="#8a4b06">＋合法手マスクを作る</text>
+
+      <rect x="60" y="164" width="250" height="48" rx="10" fill="#fff4e6" stroke="#f76707" stroke-width="2"/>
+      <text x="185" y="186" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#8a4b06">③ ε-greedy で行動を選ぶ</text>
+      <text x="185" y="204" text-anchor="middle" font-size="11.5" fill="#8a4b06">両サイド分を同時に</text>
+
+      <rect x="60" y="236" width="250" height="48" rx="10" fill="#fff4e6" stroke="#f76707" stroke-width="2"/>
+      <text x="185" y="265" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#8a4b06">④ battle.step() で1手進める</text>
+
+      <rect x="60" y="308" width="250" height="48" rx="10" fill="#e9fbf5" stroke="#0ca678" stroke-width="2"/>
+      <text x="185" y="330" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#0b7285">⑤ 経験をバッファに積む</text>
+      <text x="185" y="348" text-anchor="middle" font-size="11.5" fill="#0b7285">＋そのつど1回学習</text>
+
+      <rect x="60" y="380" width="250" height="34" rx="10" fill="#f3f0ff" stroke="#7048e8" stroke-width="2"/>
+      <text x="185" y="402" text-anchor="middle" font-size="13" font-weight="bold" fill="#5528c8">⑥ 決着 → 勝敗報酬を最後に足す</text>
+
+      <!-- arrows down -->
+      <g stroke="#adb5bd" stroke-width="2" fill="none">
+        <path d="M185 70 L185 88" marker-end="url(#e1)"/>
+        <path d="M185 142 L185 160" marker-end="url(#e1)"/>
+        <path d="M185 214 L185 232" marker-end="url(#e1)"/>
+        <path d="M185 286 L185 304" marker-end="url(#e1)"/>
+        <path d="M185 358 L185 376" marker-end="url(#e1)"/>
+      </g>
+      <path d="M45 330 C 10 330, 10 118, 45 118" stroke="#f76707" stroke-width="2" fill="none" stroke-dasharray="5 4" marker-end="url(#e2)"/>
+      <text x="22" y="230" text-anchor="middle" font-size="11.5" fill="#8a4b06" transform="rotate(-90 22 230)">決着まで繰り返し</text>
+
+      <!-- right annotations -->
+      <g font-size="12" fill="#5b6478">
+        <rect x="350" y="14" width="390" height="60" rx="8" fill="#f8f9fc" stroke="#dfe3ed"/>
+        <text x="364" y="34" font-size="12.5" fill="#2b3550" font-weight="bold">70%：リーグの過去スナップショット（自分は片側だけ学習）</text>
+        <text x="364" y="53" font-size="12.5" fill="#2b3550" font-weight="bold">30%：いまの自分 vs いまの自分（両側から学習）</text>
+        <text x="364" y="68" font-size="11.5">→ どちらでも、同じ1つのネットワークが指す</text>
+
+        <rect x="350" y="164" width="390" height="48" rx="8" fill="#f8f9fc" stroke="#dfe3ed"/>
+        <text x="364" y="184" font-size="12.5" fill="#2b3550" font-weight="bold">確率εでランダム手、それ以外は Q 最大の合法手</text>
+        <text x="364" y="202" font-size="11.5">ε: 1.0 → 0.05 に線形で減衰（3万ステップ）</text>
+
+        <rect x="350" y="236" width="390" height="48" rx="8" fill="#f8f9fc" stroke="#dfe3ed"/>
+        <text x="364" y="256" font-size="12.5" fill="#2b3550" font-weight="bold">交代 → すばやさ順に攻撃 → ひんしチェック</text>
+        <text x="364" y="274" font-size="11.5">ひんしが出たら replace フェーズへ</text>
+
+        <rect x="350" y="300" width="390" height="64" rx="8" fill="#f8f9fc" stroke="#dfe3ed"/>
+        <text x="364" y="320" font-size="12.5" fill="#2b3550" font-weight="bold">バッファ（最大5万件）から64件サンプル</text>
+        <text x="364" y="338" font-size="11.5">→ ターゲットネットで目標を作る → partial_fit 1回</text>
+        <text x="364" y="356" font-size="11.5">→ 1,000回ごとにターゲットネットを同期</text>
+      </g>
+
+      <defs>
+        <marker id="e1" markerWidth="9" markerHeight="9" refX="7" refY="3.2" orient="auto"><path d="M0,0 L8,3.2 L0,6.4 z" fill="#adb5bd"/></marker>
+        <marker id="e2" markerWidth="9" markerHeight="9" refX="7" refY="3.2" orient="auto"><path d="M0,0 L8,3.2 L0,6.4 z" fill="#f76707"/></marker>
+      </defs>
+    </svg>
+    <figcaption>1エピソードの流れ。これが4,000回。合計で約 <b>17万回</b> の勾配ステップになる。</figcaption>
+  </figure>
+
+  <div class="filename">pokemon_rl/selfplay.py — ループの本体</div>
+  <pre><code class="language-python">while not battle.done:
+    actions, acting = {}, []
+    for side in SIDES:
+        if battle.needs_action(side):                  # 行動が必要なサイドだけ
+            state = battle.observation(side)
+            mask  = battle.legal_mask(side)
+            action = policies[side].act(state, mask, greedy=greedy)
+            actions[side] = action
+            acting.append((side, state, mask, action))
+
+    for side, state, mask, action in acting:
+        if learner is not None and side in learner_sides and pending[side] is not None:
+            push(side, state, mask, done=False)         # 前回の判断をここで確定
+        pending[side] = (state, action, battle.hp_diff(side))
+
+    battle.step(actions)</code></pre>
+</section>
+
+<!-- ================================================= -->
+<section id="s8">
+  <h2 class="sec"><span class="num">SECTION 08</span>「リーグ」で過去の自分とも戦う</h2>
+
+  <p>純粋な自己対戦には弱点があります。<b>相手が常に「いまの自分」だと、ジャンケンをぐるぐる回るだけ</b>になるのです。「グーばっかり出す自分」に勝つためパーを覚える → じゃあパー対策にチョキ → チョキ対策にグー…と、<b>前に倒したはずの戦法にまた負けるようになる</b>（catastrophic forgetting）。</p>
+
+  <p>対策が <b>リーグ（opponent pool）</b> です。</p>
+
+  <figure>
+    <svg viewBox="0 0 760 290" xmlns="http://www.w3.org/2000/svg" font-family="sans-serif">
+      <rect x="30" y="110" width="150" height="76" rx="12" fill="#dbe4ff" stroke="#4c6ef5" stroke-width="2"/>
+      <text x="105" y="140" text-anchor="middle" font-size="14" font-weight="bold" fill="#2b3a8f">いまの自分</text>
+      <text x="105" y="162" text-anchor="middle" font-size="12" fill="#3b4a7f">（学習中）</text>
+
+      <path d="M105 106 C 105 50, 300 40, 360 62" stroke="#7048e8" stroke-width="2.5" fill="none" marker-end="url(#f1)"/>
+      <text x="230" y="38" text-anchor="middle" font-size="12" fill="#5528c8">100エピソードごとに重みをコピーして保存</text>
+
+      <rect x="330" y="55" width="400" height="180" rx="14" fill="#f8f7ff" stroke="#7048e8" stroke-width="2" stroke-dasharray="6 4"/>
+      <text x="530" y="80" text-anchor="middle" font-size="14" font-weight="bold" fill="#5528c8">リーグ（最大20体の過去の自分）</text>
+      <g font-size="11.5" font-family="'Source Code Pro',monospace">
+        <rect x="352" y="94" width="78" height="34" rx="7" fill="#e5dbff" stroke="#7048e8"/><text x="391" y="116" text-anchor="middle" fill="#4a2a9c">ep 100</text>
+        <rect x="440" y="94" width="78" height="34" rx="7" fill="#e5dbff" stroke="#7048e8"/><text x="479" y="116" text-anchor="middle" fill="#4a2a9c">ep 400</text>
+        <rect x="528" y="94" width="78" height="34" rx="7" fill="#e5dbff" stroke="#7048e8"/><text x="567" y="116" text-anchor="middle" fill="#4a2a9c">ep 900</text>
+        <rect x="616" y="94" width="78" height="34" rx="7" fill="#e5dbff" stroke="#7048e8"/><text x="655" y="116" text-anchor="middle" fill="#4a2a9c">ep 1700</text>
+        <rect x="352" y="140" width="78" height="34" rx="7" fill="#e5dbff" stroke="#7048e8"/><text x="391" y="162" text-anchor="middle" fill="#4a2a9c">ep 2100</text>
+        <rect x="440" y="140" width="78" height="34" rx="7" fill="#e5dbff" stroke="#7048e8"/><text x="479" y="162" text-anchor="middle" fill="#4a2a9c">ep 2600</text>
+        <rect x="528" y="140" width="78" height="34" rx="7" fill="#e5dbff" stroke="#7048e8"/><text x="567" y="162" text-anchor="middle" fill="#4a2a9c">ep 3300</text>
+        <rect x="616" y="140" width="78" height="34" rx="7" fill="#fff3bf" stroke="#f59f00" stroke-width="2"/><text x="655" y="162" text-anchor="middle" fill="#8a5800">new!</text>
+      </g>
+      <text x="530" y="200" text-anchor="middle" font-size="12" fill="#5528c8">満杯になったら、<tspan font-weight="bold">古い順ではなくランダムに</tspan>1体を入れ替える</text>
+      <text x="530" y="220" text-anchor="middle" font-size="11.5" fill="#5b6478">→ 初期の戦法もリーグに残り続ける</text>
+
+      <path d="M350 205 C 250 250, 150 240, 118 192" stroke="#f76707" stroke-width="2.5" fill="none" marker-end="url(#f2)"/>
+      <text x="215" y="270" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#8a4b06">70%の対戦はリーグからランダムに1体を選んで戦う</text>
+
+      <defs>
+        <marker id="f1" markerWidth="9" markerHeight="9" refX="7" refY="3.2" orient="auto"><path d="M0,0 L8,3.2 L0,6.4 z" fill="#7048e8"/></marker>
+        <marker id="f2" markerWidth="9" markerHeight="9" refX="7" refY="3.2" orient="auto"><path d="M0,0 L8,3.2 L0,6.4 z" fill="#f76707"/></marker>
+      </defs>
+    </svg>
+    <figcaption>リーグ方式。AlphaStar などで使われている手法の、ごくシンプルな版。</figcaption>
+  </figure>
+
+  <div class="filename">pokemon_rl/train.py</div>
+  <pre><code class="language-python">if args.snapshot_every and episode % args.snapshot_every == 0:
+    snapshot = agent.snapshot(epsilon=args.epsilon_end, seed=args.seed + episode)
+    if len(pool) &lt; args.pool_size:
+        pool.append(snapshot)
+    else:
+        # 古い順ではなく「ランダムな1体」を置き換える。
+        # こうしないとリーグが学習者と一緒に漂流してしまい、
+        # 三すくみをぐるぐる回る問題が解決しない。
+        pool[rng.randrange(len(pool))] = snapshot</code></pre>
+
+  <div class="card note">
+    <p style="margin:0"><b>ランダム置換がポイント</b><br>
+    普通のキューだと「直近20体」しか残らず、リーグ全体が学習者と一緒に漂流します。ランダムに潰すと <b>古いスナップショットほど長生きする</b>ので、初期の素朴な戦法もずっと練習相手として残る。この一行の変更で、後述の greedy 相手の勝率が <b>約56% → 約75%</b> に上がりました。</p>
+  </div>
+
+  <h3>評価用の2つの「台本AI」</h3>
+  <p>強さを測るためだけに、学習しない相手も用意してあります（<b>学習には一切使いません</b>）。</p>
+  <table>
+    <tr><th style="width:130px">相手</th><th>中身</th></tr>
+    <tr><td><b>RandomAgent</b></td><td>合法手から完全ランダム。最低ラインのチェック用</td></tr>
+    <tr><td><b>GreedyAgent</b></td><td>常に「いちばんダメージの出る技」を撃ち、自分からは交代しない。ひんし時だけ「与ダメ − 被ダメ」が最大の子を出す。人間の初心者の動きに近く、これがなかなか強い</td></tr>
+  </table>
+</section>
+
+<!-- ================================================= -->
+<section id="s9">
+  <h2 class="sec"><span class="num">SECTION 09</span>学習結果 ― グラフと、暴れる勝率のわけ</h2>
+
+  <p>デフォルト設定（4,000エピソード、ノートPCのCPUで約12分）での実測値がこちらです。</p>
+
+  <figure>
+    <svg viewBox="0 0 780 330" xmlns="http://www.w3.org/2000/svg" font-family="sans-serif">
+      <!-- grid -->
+      <g stroke="#e9ecef" stroke-width="1">
+        <line x1="50" y1="20" x2="740" y2="20"/><line x1="50" y1="80" x2="740" y2="80"/>
+        <line x1="50" y1="140" x2="740" y2="140"/><line x1="50" y1="200" x2="740" y2="200"/>
+        <line x1="50" y1="260" x2="740" y2="260"/>
+      </g>
+      <g font-size="11.5" fill="#868e96" text-anchor="end">
+        <text x="43" y="24">100%</text><text x="43" y="84">75%</text>
+        <text x="43" y="144">50%</text><text x="43" y="204">25%</text><text x="43" y="264">0%</text>
+      </g>
+      <line x1="50" y1="260" x2="740" y2="260" stroke="#adb5bd" stroke-width="1.5"/>
+      <line x1="50" y1="20" x2="50" y2="260" stroke="#adb5bd" stroke-width="1.5"/>
+
+      <!-- vs random -->
+      <polyline fill="none" stroke="#4c6ef5" stroke-width="2.5"
+        points="50,28.4 96,28.4 142,20 188,20 234,22.4 280,24.8 326,22.4 372,29.6 418,22.4 464,23.6 510,24.8 556,32 602,22.4 648,26 694,26 740,38"/>
+      <g fill="#4c6ef5">
+        <circle cx="50" cy="28.4" r="3"/><circle cx="142" cy="20" r="3"/><circle cx="280" cy="24.8" r="3"/>
+        <circle cx="418" cy="22.4" r="3"/><circle cx="556" cy="32" r="3"/><circle cx="740" cy="38" r="3"/>
+      </g>
+
+      <!-- vs greedy -->
+      <polyline fill="none" stroke="#f76707" stroke-width="2.5"
+        points="50,195.2 96,182 142,99.2 188,99.2 234,50 280,147.2 326,39.2 372,99.2 418,59.6 464,180.8 510,52.4 556,50 602,51.2 648,168.8 694,48.8 740,21.2"/>
+      <g fill="#f76707">
+        <circle cx="50" cy="195.2" r="3"/><circle cx="234" cy="50" r="3"/><circle cx="280" cy="147.2" r="3"/>
+        <circle cx="464" cy="180.8" r="3"/><circle cx="648" cy="168.8" r="3"/><circle cx="740" cy="21.2" r="3"/>
+      </g>
+
+      <!-- x labels -->
+      <g font-size="11.5" fill="#868e96" text-anchor="middle">
+        <text x="50" y="280">250</text><text x="234" y="280">1250</text><text x="418" y="280">2250</text>
+        <text x="602" y="280">3250</text><text x="740" y="280">4000</text>
+      </g>
+      <text x="395" y="302" text-anchor="middle" font-size="12.5" fill="#5b6478">エピソード数</text>
+
+      <!-- legend -->
+      <g font-size="12.5">
+        <rect x="430" y="196" width="180" height="56" rx="8" fill="#fff" stroke="#dfe3ed"/>
+        <line x1="444" y1="214" x2="472" y2="214" stroke="#4c6ef5" stroke-width="3"/>
+        <text x="480" y="218" fill="#2b3550">vs ランダム</text>
+        <line x1="444" y1="238" x2="472" y2="238" stroke="#f76707" stroke-width="3"/>
+        <text x="480" y="242" fill="#2b3550">vs グリーディ</text>
+      </g>
+      <text x="740" y="14" text-anchor="end" font-size="11.5" fill="#868e96">各点＝200戦の勝率（ε=0 の本気モード）</text>
+    </svg>
+    <figcaption>実際の <code>runs/metrics.csv</code> のデータ。青は安定、オレンジは激しく振動している。</figcaption>
+  </figure>
+
+  <div class="kpi">
+    <div><b>95〜100%</b><small>vs ランダム（終始安定）</small></div>
+    <div><b>約75%</b><small>vs グリーディ（後半の平均）</small></div>
+    <div><b>100%</b><small>ベスト版 vs グリーディ（200/200）</small></div>
+    <div><b>17万</b><small>勾配ステップ / 12分</small></div>
+  </div>
+
+  <h3>オレンジ線がガタガタなのはバグ？ → いいえ、ゲームのせい</h3>
+  <p>ep 1250 で 87.5% → ep 1500 で 47% → ep 1750 で 92% → ep 2500 で 33%…と、勝率が平気で40ポイント跳ねます。最適化がおかしいのではなく、<span class="hl">3匹が三すくみだから「どんな固定相手にも強い唯一の戦法」が存在しない</span>ためです。</p>
+
+  <p>自己対戦AIは三すくみの上をぐるぐる回り続けます。そして <b>グリーディは「固定の1手」</b> なので、AIがサイクルのどこにいるかによって、たまたま相性が良かったり悪かったりする。<b>vs ランダムがずっと安定している</b>のは、ランダムには特定の戦法が無いからです — この対比が「振動の原因は三すくみ」という証拠になっています。</p>
+
+  <div class="card">
+    <p style="margin-top:0"><b>対処</b></p>
+    <ul class="clean" style="margin-bottom:0">
+      <li>リーグを広げる（<code>--pool-size</code>、<code>--snapshot-every</code>、<code>--pool-prob</code>）と振動は<b>弱まる</b></li>
+      <li>そもそも完全には消せないので、評価ごとに<b>いちばん強かった瞬間のチェックポイント</b>を <code>runs/dqn-best.pkl</code> に保存しておく</li>
+    </ul>
+  </div>
+
+  <h3>ちゃんと「わかって」いるのかの確認</h3>
+  <p>学習済みポリシーの挙動を見ると、知識が入っているのがわかります。</p>
+  <div class="card tip">
+    <ul class="clean" style="margin:0">
+      <li><b>先発はスターミー</b>を選ぶ（最速・4倍技持ち）</li>
+      <li>相手がサイドンなら<b>1ターン目になみのり</b>で確定1発（4倍＝確1）</li>
+      <li>逆に、弱いチェックポイントは<b>相手のサンダーに自分のサンダーを当てにいく</b>（正解はサイドン。10まんボルトが無効になる）── これが「まだ分かってない」サイン</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ================================================= -->
+<section id="s10">
+  <h2 class="sec"><span class="num">SECTION 10</span>ファイル構成と動かし方</h2>
+
+  <table>
+    <tr><th style="width:210px">ファイル</th><th class="num" style="width:70px">行数</th><th>役割</th></tr>
+    <tr><td><code>pokemon_rl/data.py</code></td><td class="num">94</td><td>タイプ相性表、技、種族データ（定数だけ）</td></tr>
+    <tr><td><code>pokemon_rl/battle.py</code></td><td class="num">258</td><td>バトルエンジン。フェーズ、ダメージ計算、合法手、観測ベクトル</td></tr>
+    <tr><td><code>pokemon_rl/agents.py</code></td><td class="num">245</td><td>DQN本体、リプレイバッファ、スナップショット、台本AI2種</td></tr>
+    <tr><td><code>pokemon_rl/selfplay.py</code></td><td class="num">90</td><td>1バトルを回す関数。学習でも評価でも同じものを使う</td></tr>
+    <tr><td><code>pokemon_rl/train.py</code></td><td class="num">244</td><td>学習ループ、リーグ管理、評価、ログ、CLI</td></tr>
+    <tr><td><code>tests/</code></td><td class="num">458</td><td>pytest 54本（エンジン27・エージェント17・ループ10）</td></tr>
+  </table>
+
+  <p>依存関係はきれいな一方向です：<code>data → battle → agents → selfplay → train</code>。学習と評価がまったく同じ <code>play_episode()</code> を通るので、「学習時と評価時で挙動が違う」バグが原理的に起きにくくなっています。</p>
+
+  <h3>動かす</h3>
+  <pre><code class="language-bash">uv sync
+
+uv run python main.py                      # デフォルト4000エピソード（約12分）
+uv run python main.py --episodes 10000 --shaping 0.5 --verbose
+uv run python -m pokemon_rl.train --help   # 全オプション
+uv run pytest                              # テスト54本</code></pre>
+
+  <h3>出てくるもの（<code>runs/</code>）</h3>
+  <table>
+    <tr><th style="width:200px">ファイル</th><th>中身</th></tr>
+    <tr><td><code>train.log</code></td><td>進捗行、定期評価、たまにバトル全文の棋譜</td></tr>
+    <tr><td><code>metrics.csv</code></td><td>エピソード・ε・TD損失・平均ターン数・両方の勝率</td></tr>
+    <tr><td><code>dqn.pkl</code></td><td>最終的なQネットワーク（<code>DQNAgent.load</code> で復元）</td></tr>
+    <tr><td><code>dqn-best.pkl</code></td><td>評価での平均勝率がいちばん良かったチェックポイント</td></tr>
+  </table>
+
+  <pre><code class="language-bash">episode  2000 | steps  74522 | eps 0.050 | loss   0.0177 | turns 36.5 | buffer 50000
+episode  2000 | eval vs random 96.0% (192W/8L/0D) | vs greedy 67.0% (134W/66L/0D)</code></pre>
+
+  <h3>まとめ：このプロジェクトの学びどころ</h3>
+  <div class="card tip">
+    <ul class="clean" style="margin:0">
+      <li><b>DQNは意外と短く書ける。</b> 本体は <code>train_step()</code> の20行ちょっと</li>
+      <li><b>合法手マスクは、行動選択だけでなく目標計算にも要る。</b> 忘れると静かに壊れる</li>
+      <li><b>報酬シェイピングは「長い試合」の必需品。</b> HP差を足すだけで学習速度が段違い</li>
+      <li><b>自己対戦だけだと過去を忘れる。</b> リーグを持ち、しかも<b>ランダム置換</b>にするのが効く</li>
+      <li><b>勝率が振動したら、まずゲームの性質を疑う。</b> 三すくみには「最強の固定戦法」が無い</li>
+    </ul>
+  </div>
+</section>
+
+<footer>
+  <p>ブランチ <code>pokemon-dqn</code> ／ 実装はすべてスクラッチ（RLフレームワーク不使用）</p>
+</footer>
+
+</div>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.12.0/styles/default.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.12.0/highlight.min.js"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.12.0/languages/rust.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.12.0/languages/typescript.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.12.0/languages/css.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.12.0/languages/json.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.12.0/languages/yaml.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.12.0/languages/bash.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.12.0/languages/python.min.js"></script>
+
+<script>hljs.highlightAll();</script>
+
+<style>
+  code {
+    background: #eef1f7;
+    border-radius: 5px;
+    padding: 1px 6px;
+    font-family: "Source Code Pro", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 13px;
+  }
+  pre code.hljs { padding: 18px 20px; }
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Code+Pro:ital,wght@0,400;0,600;1,400&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.12.0/styles/atom-one-dark.min.css">
+
+</body>
+</html>
