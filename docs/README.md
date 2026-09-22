@@ -64,6 +64,8 @@ AIが生成した[比較用実装](../reference/ai-generated-self-play-dqn/)は�
 
 - [入力スケーリングだけを直すアブレーション実験（図解）](reports/input-scaling-ablation.html)
   元実装の他の問題を残したまま入力だけを0〜1化し、5 seedで学習・評価した追加実験。Random相手の平均勝率は27.4%から94.1%、Attack相手は4.9%から65.1%へ改善しました。[詳細と再現方法](reports/input-scaling-ablation.md)も保存しています。
+- [IDをone-hotにするアブレーション実験](reports/categorical-encoding-ablation.md)
+  ポケモンIDだけをone-hotにすると、Attack相手の平均勝率が65.1%から80.3%へ改善し、seed間の標準偏差も19.5%から1.5%へ縮小しました。
 
 以下のHTMLは作成時のスナップショットです。外部フォントとシンタックスハイライト用CDNを参照するため、完全な見た目にはネットワーク接続が必要です。
 
