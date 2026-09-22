@@ -1,0 +1,663 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>数字をそろえただけで、ポケモンAIは強くなった</title>
+  <meta property="og:title" content="数字をそろえただけで、ポケモンAIは強くなった" />
+  <meta name="description" content="ポケモンDQNの入力を0〜1にそろえるだけで、Attack相手の平均勝率が4.9%から65.1%へ改善したアブレーション実験を、高校生向けに図解します。" />
+  <meta property="og:description" content="ポケモンDQNの入力を0〜1にそろえるだけで、Attack相手の平均勝率が4.9%から65.1%へ改善したアブレーション実験を、高校生向けに図解します。" />
+  <meta property="og:type" content="article" />
+  <meta property="og:locale" content="ja_JP" />
+  <meta name="author" content="pokemon_ai project" />
+  <meta name="theme-color" content="#17263d" />
+  <meta name="robots" content="noindex,nofollow" />
+  <link rel="icon" href="/favicon.ico" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Code+Pro:ital,wght@0,400;0,600;1,400&family=Noto+Sans+JP:wght@400;500;600;700;800;900&display=swap">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.12.0/styles/atom-one-dark.min.css">
+
+  <style>
+    :root {
+      --ink: #17263d;
+      --muted: #607087;
+      --paper: #f4f2e9;
+      --card: #fffef9;
+      --line: #d9d5c8;
+      --navy: #17263d;
+      --blue: #3478c7;
+      --cyan: #37b8b0;
+      --green: #178568;
+      --green-soft: #e5f6ef;
+      --red: #df5b55;
+      --red-soft: #fff0ed;
+      --yellow: #f4c34f;
+      --yellow-soft: #fff7da;
+      --shadow: 0 15px 40px rgba(23, 38, 61, .10);
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 4% 4%, rgba(244,195,79,.25), transparent 23rem),
+        radial-gradient(circle at 96% 22%, rgba(55,184,176,.14), transparent 25rem),
+        var(--paper);
+      font-family: "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      line-height: 1.8;
+    }
+
+    a { color: inherit; }
+    code {
+      background: #eef1f7;
+      border-radius: 5px;
+      padding: 1px 6px;
+      font-family: "Source Code Pro", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+      font-size: 13px;
+    }
+    pre { margin: 0; overflow: auto; }
+    pre code, pre code.hljs {
+      display: block;
+      padding: 22px;
+      color: #d8e2f1;
+      background: #1e2939;
+      border-radius: 0;
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    .wrap { width: min(1120px, calc(100% - 36px)); margin: 0 auto; }
+    .hero {
+      position: relative;
+      min-height: 700px;
+      overflow: hidden;
+      color: #fff;
+      background: var(--navy);
+      border-bottom: 8px solid var(--yellow);
+    }
+    .hero::before {
+      content: "";
+      position: absolute;
+      width: 550px;
+      height: 550px;
+      right: -160px;
+      top: -190px;
+      border: 90px solid rgba(55,184,176,.12);
+      border-radius: 50%;
+    }
+    .hero::after {
+      content: "0 → 1";
+      position: absolute;
+      right: 4vw;
+      bottom: -55px;
+      color: rgba(255,255,255,.035);
+      font: 900 clamp(130px, 20vw, 260px)/1 "Source Code Pro", monospace;
+      white-space: nowrap;
+    }
+    .hero-inner { position: relative; z-index: 1; padding: 76px 0 65px; }
+    .eyebrow {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: var(--yellow);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: .15em;
+    }
+    .eyebrow::before { content: ""; width: 45px; height: 3px; background: currentColor; }
+    h1 {
+      max-width: 900px;
+      margin: 25px 0 18px;
+      font-size: clamp(42px, 7.2vw, 84px);
+      line-height: 1.09;
+      letter-spacing: -.055em;
+    }
+    h1 .marker { color: var(--yellow); }
+    .subtitle {
+      max-width: 770px;
+      margin: 0;
+      color: #c4d2e3;
+      font-size: clamp(16px, 2.2vw, 22px);
+    }
+    .hero-result {
+      display: grid;
+      grid-template-columns: 1fr 70px 1fr;
+      align-items: center;
+      max-width: 760px;
+      margin-top: 48px;
+    }
+    .hero-score {
+      padding: 20px 22px;
+      border: 1px solid rgba(255,255,255,.15);
+      border-radius: 16px;
+      background: rgba(255,255,255,.06);
+      backdrop-filter: blur(6px);
+    }
+    .hero-score strong { display: block; font: 900 clamp(33px,5vw,54px)/1 "Source Code Pro", monospace; }
+    .hero-score small { color: #aabbd0; font-weight: 700; }
+    .hero-score.after { border-color: rgba(244,195,79,.55); background: rgba(244,195,79,.10); }
+    .hero-score.after strong { color: var(--yellow); }
+    .hero-arrow { color: var(--yellow); text-align: center; font-size: 30px; font-weight: 900; }
+    .hero-note { margin: 15px 0 0; color: #8fa4bd; font-size: 12px; }
+
+    .toc { position: relative; z-index: 2; margin-top: -35px; }
+    .toc-card {
+      display: grid;
+      grid-template-columns: 150px 1fr;
+      gap: 22px;
+      padding: 25px 28px;
+      background: #fff;
+      border-radius: 17px;
+      box-shadow: var(--shadow);
+    }
+    .toc-title { display: flex; align-items: center; gap: 10px; font-weight: 900; }
+    .toc-title::before { content: ""; width: 7px; height: 30px; border-radius: 9px; background: var(--red); }
+    .toc ol {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      counter-reset: toc;
+    }
+    .toc li { counter-increment: toc; }
+    .toc a {
+      display: block;
+      padding: 3px 12px;
+      border-left: 1px solid var(--line);
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .toc a::before { content: "0" counter(toc); display: block; color: var(--red); font-size: 10px; }
+    .toc a:hover { color: var(--blue); }
+
+    main { padding: 75px 0 105px; }
+    section { margin-top: 96px; scroll-margin-top: 22px; }
+    section:first-child { margin-top: 0; }
+    .section-head { display: grid; grid-template-columns: 88px 1fr; align-items: start; margin-bottom: 34px; }
+    .section-no { color: var(--red); font-weight: 900; font-size: 13px; letter-spacing: .13em; }
+    .section-no::after { content: ""; display: block; width: 50px; height: 3px; margin-top: 9px; background: var(--red); }
+    h2 { margin: 0; font-size: clamp(29px, 4.4vw, 48px); line-height: 1.22; letter-spacing: -.04em; }
+    .lead { max-width: 820px; margin: 12px 0 0; color: var(--muted); font-size: 17px; }
+    .panel { background: var(--card); border: 1px solid var(--line); border-radius: 20px; box-shadow: 0 8px 28px rgba(23,38,61,.055); }
+
+    .problem-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .scale-card { padding: 27px; }
+    .scale-card h3 { margin: 0 0 6px; font-size: 20px; }
+    .scale-card > p { margin: 0 0 22px; color: var(--muted); font-size: 13px; }
+    .scale-row { display: grid; grid-template-columns: 105px 1fr 54px; gap: 12px; align-items: center; margin: 13px 0; font-size: 13px; font-weight: 700; }
+    .track { height: 15px; border-radius: 20px; background: #e8e8e2; overflow: hidden; }
+    .fill { height: 100%; min-width: 4px; border-radius: inherit; }
+    .active-bar { width: .25%; background: var(--green); }
+    .move-bar { width: 2.2%; background: var(--yellow); }
+    .id-bar { width: 32.7%; background: var(--blue); }
+    .hp-bar { width: 100%; background: var(--red); }
+    .one-bar { width: 100%; background: linear-gradient(90deg,var(--cyan),var(--green)); }
+    .analogy-card { padding: 28px; background: var(--navy); color: #fff; }
+    .analogy-card h3 { margin: 0 0 18px; font-size: 20px; }
+    .voice {
+      position: relative;
+      margin: 14px 0;
+      padding: 16px 18px;
+      border-radius: 13px;
+      color: var(--ink);
+      background: #fff;
+      font-size: 14px;
+    }
+    .voice.loud { margin-right: 4%; border-left: 7px solid var(--red); font-size: 21px; font-weight: 900; }
+    .voice.small { margin-left: 32%; border-left: 7px solid var(--green); color: var(--muted); font-size: 12px; }
+    .analogy-card .caption { color: #b7c5d6; font-size: 13px; }
+
+    .relu-flow { display: grid; grid-template-columns: 1fr 70px 1fr; align-items: center; gap: 14px; margin-top: 22px; }
+    .relu-box { min-height: 175px; display: grid; place-items: center; padding: 22px; border-radius: 17px; text-align: center; }
+    .relu-box strong { display: block; font-size: 21px; }
+    .raw-box { background: var(--red-soft); border: 1px solid #f1c5c0; }
+    .dead-neurons { display: flex; justify-content: center; gap: 7px; margin-top: 14px; }
+    .neuron { width: 17px; height: 17px; border-radius: 50%; background: #bfc5ca; box-shadow: inset 0 0 0 4px #aeb4ba; }
+    .flow-arrow { text-align: center; color: var(--red); font-size: 30px; font-weight: 900; }
+    .formula-box { background: var(--yellow-soft); border: 1px solid #ead17d; }
+    .formula { font: 700 18px "Source Code Pro", monospace; }
+
+    .change-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .code-card { overflow: hidden; border-radius: 18px; background: #1e2939; box-shadow: var(--shadow); }
+    .code-head { display: flex; justify-content: space-between; align-items: center; padding: 13px 18px; color: #fff; background: #151e2b; font-size: 13px; font-weight: 800; }
+    .dots { display: flex; gap: 6px; }
+    .dots i { width: 8px; height: 8px; border-radius: 50%; background: var(--red); }
+    .dots i:nth-child(2) { background: var(--yellow); }
+    .dots i:nth-child(3) { background: var(--cyan); }
+    .code-note { padding: 18px 21px; color: #bdcadd; background: #253246; font-size: 13px; }
+    .before .code-head { border-bottom: 3px solid var(--red); }
+    .after .code-head { border-bottom: 3px solid var(--cyan); }
+
+    .translation { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 22px; }
+    .translation-card { position: relative; padding: 23px; overflow: hidden; }
+    .translation-card small { color: var(--red); font-weight: 900; }
+    .translation-card h3 { margin: 7px 0 13px; }
+    .equation { padding: 12px; border-radius: 10px; background: #edf2f4; font: 600 13px "Source Code Pro", monospace; }
+    .equation-result { margin-top: 9px; color: var(--green); font-size: 13px; font-weight: 800; }
+
+    .fair-test { padding: 30px; }
+    .fixed-list { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 22px; }
+    .fixed-item { padding: 17px; border-radius: 13px; background: #eef2f4; }
+    .fixed-item b { display: block; color: var(--blue); font-size: 18px; }
+    .fixed-item span { color: var(--muted); font-size: 12px; }
+    .only-change { margin-top: 18px; padding: 18px 20px; border-left: 6px solid var(--yellow); border-radius: 0 12px 12px 0; background: var(--yellow-soft); font-size: 14px; }
+
+    .walk { display: grid; grid-template-columns: repeat(5, 1fr); gap: 13px; margin-top: 24px; }
+    .walk-card { position: relative; min-height: 175px; padding: 20px 17px; color: #fff; border-radius: 15px; background: var(--navy); }
+    .walk-card:nth-child(even) { background: #294461; }
+    .walk-card:not(:last-child)::after {
+      content: "→";
+      position: absolute;
+      z-index: 2;
+      right: -20px;
+      top: 67px;
+      display: grid;
+      place-items: center;
+      width: 28px;
+      height: 28px;
+      color: var(--navy);
+      background: var(--yellow);
+      border-radius: 50%;
+      font-weight: 900;
+    }
+    .walk-card small { color: var(--yellow); font-weight: 900; }
+    .walk-card b { display: block; margin: 10px 0 5px; }
+    .walk-card p { margin: 0; color: #c7d4e2; font-size: 12px; line-height: 1.65; }
+
+    .result-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .result-card { padding: 28px; }
+    .result-card h3 { margin: 0; font-size: 20px; }
+    .result-card > p { margin: 5px 0 23px; color: var(--muted); font-size: 13px; }
+    .bar-pair { margin: 19px 0; }
+    .bar-label { display: flex; justify-content: space-between; margin-bottom: 7px; font-size: 13px; font-weight: 800; }
+    .result-track { height: 34px; overflow: hidden; border-radius: 8px; background: #e9e8e1; }
+    .result-fill { height: 100%; display: flex; align-items: center; justify-content: flex-end; padding-right: 10px; color: #fff; font: 800 12px "Source Code Pro", monospace; }
+    .raw-fill { background: linear-gradient(90deg,#ef9994,var(--red)); }
+    .scaled-fill { background: linear-gradient(90deg,var(--cyan),var(--green)); }
+    .delta { display: inline-block; padding: 5px 10px; border-radius: 30px; color: var(--green); background: var(--green-soft); font-size: 12px; font-weight: 900; }
+
+    .seed-table-wrap { margin-top: 20px; overflow: auto; }
+    .seed-table { width: 100%; border-collapse: separate; border-spacing: 0; border: 1px solid var(--line); border-radius: 15px; overflow: hidden; background: #fff; }
+    .seed-table th, .seed-table td { padding: 13px 15px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; }
+    .seed-table th:first-child, .seed-table td:first-child { text-align: left; }
+    .seed-table thead { background: #eaf0f3; }
+    .seed-table tr:last-child td { border-bottom: 0; }
+    .good { color: var(--green); font-weight: 900; }
+    .bad { color: var(--red); }
+
+    .finding {
+      display: grid;
+      grid-template-columns: 150px 1fr;
+      align-items: center;
+      gap: 28px;
+      margin-top: 24px;
+      padding: 27px;
+      color: #fff;
+      border-radius: 20px;
+      background: var(--navy);
+    }
+    .big-delta {
+      display: grid;
+      place-items: center;
+      width: 138px;
+      height: 138px;
+      border: 10px solid var(--yellow);
+      border-radius: 50%;
+      text-align: center;
+      font: 900 27px/1.15 "Source Code Pro", monospace;
+    }
+    .big-delta small { display: block; color: #b8c8da; font: 700 10px "Noto Sans JP", sans-serif; }
+    .finding h3 { margin: 0 0 7px; font-size: 25px; }
+    .finding p { margin: 0; color: #c1cfdd; font-size: 14px; }
+
+    .limits { display: grid; grid-template-columns: repeat(3, 1fr); gap: 17px; }
+    .limit { padding: 25px; }
+    .limit .limit-no { color: var(--red); font: 800 12px "Source Code Pro", monospace; }
+    .limit h3 { margin: 7px 0; font-size: 18px; }
+    .limit p { margin: 0; color: var(--muted); font-size: 13px; }
+    .final {
+      margin-top: 25px;
+      padding: 32px;
+      color: #fff;
+      border-radius: 20px;
+      background: linear-gradient(135deg,#176d68,#244c70);
+    }
+    .final small { color: var(--yellow); font-weight: 900; letter-spacing: .1em; }
+    .final h3 { margin: 8px 0; font-size: clamp(25px,3.5vw,38px); }
+    .final p { max-width: 850px; margin: 0; color: #d3e6e4; }
+
+    footer { padding: 35px 0; color: #8fa3b9; background: var(--navy); font-size: 12px; }
+    footer .wrap { display: flex; justify-content: space-between; gap: 20px; }
+
+    @media (max-width: 850px) {
+      .toc-card, .section-head { grid-template-columns: 1fr; }
+      .toc ol { grid-template-columns: 1fr 1fr; }
+      .problem-grid, .change-grid, .result-cards { grid-template-columns: 1fr; }
+      .translation, .limits { grid-template-columns: 1fr; }
+      .fixed-list { grid-template-columns: 1fr 1fr; }
+      .walk { grid-template-columns: 1fr; }
+      .walk-card { min-height: auto; }
+      .walk-card:not(:last-child)::after { content: "↓"; right: calc(50% - 14px); top: auto; bottom: -20px; }
+    }
+    @media (max-width: 570px) {
+      .wrap { width: min(100% - 24px, 1120px); }
+      .hero { min-height: auto; }
+      .hero-inner { padding-top: 50px; }
+      .hero-result { grid-template-columns: 1fr; gap: 10px; }
+      .hero-arrow { transform: rotate(90deg); }
+      .toc ol, .fixed-list { grid-template-columns: 1fr; }
+      .relu-flow { grid-template-columns: 1fr; }
+      .flow-arrow { transform: rotate(90deg); }
+      .finding { grid-template-columns: 1fr; text-align: center; }
+      .big-delta { margin: auto; }
+      footer .wrap { display: block; }
+    }
+  </style>
+</head>
+<body>
+  <header class="hero">
+    <div class="wrap hero-inner">
+      <div class="eyebrow">INPUT SCALING ABLATION / 5 SEEDS</div>
+      <h1>数字をそろえただけで、<br>ポケモンAIは<span class="marker">強くなった。</span></h1>
+      <p class="subtitle">HP 413とフラグ1を同じまま渡していたAI。入力を0〜1へそろえる「だけ」で何が変わるか、ほかの欠点を残したまま確かめました。</p>
+
+      <div class="hero-result" aria-label="Attack相手の平均勝率の変化">
+        <div class="hero-score">
+          <strong>4.9%</strong>
+          <small>変更前 / vs Attack</small>
+        </div>
+        <div class="hero-arrow">→</div>
+        <div class="hero-score after">
+          <strong>65.1%</strong>
+          <small>0〜1化後 / vs Attack</small>
+        </div>
+      </div>
+      <p class="hero-note">1,000試合学習 × seed 0〜4 / 各評価300戦 / 変更したのは入力の尺度だけ</p>
+    </div>
+  </header>
+
+  <nav class="toc wrap" aria-label="目次">
+    <div class="toc-card">
+      <div class="toc-title">目次</div>
+      <ol>
+        <li><a href="#problem">何が問題？</a></li>
+        <li><a href="#change">何を変えた？</a></li>
+        <li><a href="#walkthrough">どう比べた？</a></li>
+        <li><a href="#results">結果は？</a></li>
+        <li><a href="#meaning">何が分かった？</a></li>
+      </ol>
+    </div>
+  </nav>
+
+  <main class="wrap">
+    <section id="problem">
+      <div class="section-head">
+        <div class="section-no">01 / PROBLEM</div>
+        <div>
+          <h2>AIに渡した数字の<br>「声の大きさ」が違いすぎた</h2>
+          <p class="lead">ニューラルネットは、盤面を数字の並びとして読みます。しかし元実装では、意味も大きさも違う数字をそのまま84個並べていました。</p>
+        </div>
+      </div>
+
+      <div class="problem-grid">
+        <article class="panel scale-card">
+          <h3>変更前の入力</h3>
+          <p>横棒は、最大のHP 413を100%とした大きさです。</p>
+          <div class="scale-row"><span>active</span><div class="track"><div class="fill active-bar"></div></div><b>1</b></div>
+          <div class="scale-row"><span>技ID</span><div class="track"><div class="fill move-bar"></div></div><b>9</b></div>
+          <div class="scale-row"><span>ポケモンID</span><div class="track"><div class="fill id-bar"></div></div><b>135</b></div>
+          <div class="scale-row"><span>HP</span><div class="track"><div class="fill hp-bar"></div></div><b>413</b></div>
+        </article>
+
+        <article class="panel analogy-card">
+          <h3>教室にたとえると</h3>
+          <div class="voice loud">HP「413です！」</div>
+          <div class="voice small">active「……1です」</div>
+          <p class="caption">小さな声にも大切な情報があるのに、大きな数字の影響が強すぎて学習が不安定になります。</p>
+        </article>
+      </div>
+
+      <div class="relu-flow">
+        <div class="relu-box raw-box">
+          <div>
+            <strong>生の84入力</strong>
+            <span>0, 1, 9, 135, 413…</span>
+          </div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="relu-box formula-box">
+          <div>
+            <strong>ReLUは「門」</strong>
+            <div class="formula">ReLU(x) = max(0, x)</div>
+            <div class="dead-neurons" aria-label="停止した10ユニット">
+              <i class="neuron"></i><i class="neuron"></i><i class="neuron"></i><i class="neuron"></i><i class="neuron"></i>
+              <i class="neuron"></i><i class="neuron"></i><i class="neuron"></i><i class="neuron"></i><i class="neuron"></i>
+            </div>
+            <span>seed 0では第1層が全停止</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="change">
+      <div class="section-head">
+        <div class="section-no">02 / ONE CHANGE</div>
+        <div>
+          <h2>変更はひとつ。<br>全部を0〜1に収める</h2>
+          <p class="lead">ネットワークも報酬も学習回数も変えません。ポケモン1体を表す6個の数字だけを割り算しました。</p>
+        </div>
+      </div>
+
+      <div class="change-grid">
+        <article class="code-card before">
+          <div class="code-head"><span>BEFORE — 生の数字</span><span class="dots"><i></i><i></i><i></i></span></div>
+          <pre><code class="language-python">def to_array(self):
+    return [
+        self.id,
+        self.actual_hp,
+        *[move.id for move in self.actual_moves],
+    ]</code></pre>
+          <div class="code-note">例：<code>[135, 333, 3, 4, 7, 8]</code></div>
+        </article>
+
+        <article class="code-card after">
+          <div class="code-head"><span>AFTER — 0〜1へ変換</span><span class="dots"><i></i><i></i><i></i></span></div>
+          <pre><code class="language-python">def scaled_to_array(self):
+    return [
+        self.id / 135,
+        max(0, self.actual_hp) / max_hp,
+        *[move.id / 9 for move in self.actual_moves],
+    ]</code></pre>
+          <div class="code-note">例：<code>[1.0, 1.0, 0.33, 0.44, 0.78, 0.89]</code></div>
+        </article>
+      </div>
+
+      <div class="translation">
+        <article class="panel translation-card">
+          <small>SPECIES</small>
+          <h3>ポケモンID</h3>
+          <div class="equation">135 ÷ 135 = 1.00</div>
+          <div class="equation-result">最大でも1</div>
+        </article>
+        <article class="panel translation-card">
+          <small>HIT POINT</small>
+          <h3>残りHP</h3>
+          <div class="equation">206 ÷ 413 ≒ 0.50</div>
+          <div class="equation-result">「半分残っている」と表現</div>
+        </article>
+        <article class="panel translation-card">
+          <small>MOVE</small>
+          <h3>技ID</h3>
+          <div class="equation">9 ÷ 9 = 1.00</div>
+          <div class="equation-result">最大でも1</div>
+        </article>
+      </div>
+
+      <div class="only-change"><strong>重要：</strong> IDを割り算しても、IDに本当の大小関係がない問題は残ります。今回は「大きさをそろえる効果」だけを見るため、あえてone-hot化していません。</div>
+    </section>
+
+    <section id="walkthrough">
+      <div class="section-head">
+        <div class="section-no">03 / WALKTHROUGH</div>
+        <div>
+          <h2>同じ条件で、<br>生入力と0〜1入力を対決</h2>
+          <p class="lead">ほかの修正が勝率へ混ざらないように、入力以外は元実装のままです。このように一要素だけ変える比較を「アブレーション実験」と呼びます。</p>
+        </div>
+      </div>
+
+      <div class="panel fair-test">
+        <h3 style="margin:0;font-size:21px">変えずに残した条件</h3>
+        <div class="fixed-list">
+          <div class="fixed-item"><b>10 × 10</b><span>小さなニューラルネット</span></div>
+          <div class="fixed-item"><b>1回 / 試合</b><span>少ない学習更新</span></div>
+          <div class="fixed-item"><b>Maskなし</b><span>違法行動も未来の候補</span></div>
+          <div class="fixed-item"><b>Targetなし</b><span>動く自分を教師にする</span></div>
+        </div>
+        <div class="only-change">つまり、結果に大差が出たなら、その主な違いは<strong>入力を0〜1へそろえたこと</strong>です。</div>
+      </div>
+
+      <div class="walk" aria-label="実験の流れ">
+        <div class="walk-card"><small>STEP 1</small><b>乱数を固定</b><p>seed 0〜4の5パターンを用意。偶然の当たり外れを確認します。</p></div>
+        <div class="walk-card"><small>STEP 2</small><b>2種類を学習</b><p>生入力版と0〜1版を、それぞれ1,000試合学習させます。</p></div>
+        <div class="walk-card"><small>STEP 3</small><b>学習を停止</b><p>評価中は重みを更新せず、ランダム探索も0にします。</p></div>
+        <div class="walk-card"><small>STEP 4</small><b>固定相手と対戦</b><p>RandomとAttackへ、それぞれ300戦ずつ挑みます。</p></div>
+        <div class="walk-card"><small>STEP 5</small><b>平均を比較</b><p>5 seedの平均と標準偏差を計算します。</p></div>
+      </div>
+
+      <div class="code-card" style="margin-top:24px">
+        <div class="code-head"><span>再現コマンド</span><span class="dots"><i></i><i></i><i></i></span></div>
+        <pre><code class="language-bash">python -m experiments.input_scaling_ablation \
+  --episodes 1000 \
+  --battles 300 \
+  --seeds 0 1 2 3 4 \
+  --output docs/reports/input-scaling-ablation.json</code></pre>
+      </div>
+    </section>
+
+    <section id="results">
+      <div class="section-head">
+        <div class="section-no">04 / RESULTS</div>
+        <div>
+          <h2>入力だけで、<br>勝率はここまで変わった</h2>
+          <p class="lead">値は5 seedの平均です。棒が長いほど多く勝っています。</p>
+        </div>
+      </div>
+
+      <div class="result-cards">
+        <article class="panel result-card">
+          <h3>vs Random</h3>
+          <p>攻撃と交代をランダムに選ぶ相手</p>
+          <div class="bar-pair">
+            <div class="bar-label"><span>生入力</span><b>27.4%</b></div>
+            <div class="result-track"><div class="result-fill raw-fill" style="width:27.4%">27.4</div></div>
+          </div>
+          <div class="bar-pair">
+            <div class="bar-label"><span>0〜1入力</span><b>94.1%</b></div>
+            <div class="result-track"><div class="result-fill scaled-fill" style="width:94.1%">94.1</div></div>
+          </div>
+          <span class="delta">+66.7ポイント</span>
+        </article>
+
+        <article class="panel result-card">
+          <h3>vs Attack</h3>
+          <p>毎ターン攻撃してくる厳しい相手</p>
+          <div class="bar-pair">
+            <div class="bar-label"><span>生入力</span><b>4.9%</b></div>
+            <div class="result-track"><div class="result-fill raw-fill" style="width:4.9%"></div></div>
+          </div>
+          <div class="bar-pair">
+            <div class="bar-label"><span>0〜1入力</span><b>65.1%</b></div>
+            <div class="result-track"><div class="result-fill scaled-fill" style="width:65.1%">65.1</div></div>
+          </div>
+          <span class="delta">+60.1ポイント</span>
+        </article>
+      </div>
+
+      <div class="seed-table-wrap">
+        <table class="seed-table" aria-label="seedごとの勝率">
+          <thead>
+            <tr><th>seed</th><th>生 vs Random</th><th>0〜1 vs Random</th><th>生 vs Attack</th><th>0〜1 vs Attack</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>0</td><td class="bad">56.0%</td><td class="good">97.7%</td><td class="bad">2.3%</td><td class="good">54.7%</td></tr>
+            <tr><td>1</td><td class="bad">2.7%</td><td class="good">98.7%</td><td class="bad">0.3%</td><td class="good">77.3%</td></tr>
+            <tr><td>2</td><td class="bad">15.7%</td><td class="good">98.3%</td><td class="bad">2.0%</td><td class="good">83.3%</td></tr>
+            <tr><td>3</td><td class="bad">23.7%</td><td class="good">77.0%</td><td class="bad">9.0%</td><td class="good">36.0%</td></tr>
+            <tr><td>4</td><td class="bad">39.0%</td><td class="good">98.7%</td><td class="bad">11.0%</td><td class="good">74.0%</td></tr>
+            <tr><td><strong>平均</strong></td><td><strong>27.4%</strong></td><td class="good">94.1%</td><td><strong>4.9%</strong></td><td class="good">65.1%</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="finding">
+        <div class="big-delta">+60.1<small>vs Attack / pt</small></div>
+        <div>
+          <h3>「入力が主因」という仮説を強く支持</h3>
+          <p>5 seed合計では、Attack相手が74勝/1,500戦から976勝/1,500戦へ改善。ネットワークを大きくせず、学習回数も増やさず、入力だけでここまで変わりました。</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="meaning">
+      <div class="section-head">
+        <div class="section-no">05 / TAKEAWAY</div>
+        <div>
+          <h2>大成功。でも、<br>これで完成ではない</h2>
+          <p class="lead">入力スケーリングの重要性は確認できました。同時に、次に直すべき問題もはっきり残っています。</p>
+        </div>
+      </div>
+
+      <div class="limits">
+        <article class="panel limit">
+          <div class="limit-no">LIMIT 01</div>
+          <h3>seed差がまだ大きい</h3>
+          <p>0〜1版のAttack勝率は36.0〜83.3%。初期値や対戦の偶然に左右されています。</p>
+        </article>
+        <article class="panel limit">
+          <div class="limit-no">LIMIT 02</div>
+          <h3>IDはまだ連続値</h3>
+          <p>135が121より「大きい種類」という意味はありません。次はone-hot表現が候補です。</p>
+        </article>
+        <article class="panel limit">
+          <div class="limit-no">LIMIT 03</div>
+          <h3>DQNの欠点は未修正</h3>
+          <p>違法行動のQ値、更新不足、Target Network不在は、そのまま残しています。</p>
+        </article>
+      </div>
+
+      <div class="final">
+        <small>CONCLUSION</small>
+        <h3>AIには、数字の「意味」だけでなく「尺度」も伝える。</h3>
+        <p>大きな数字をたくさん入れれば情報が増えるわけではありません。比較しやすい形へ整えて初めて、ニューラルネットは盤面の違いを学べます。今回の実験では、その前処理だけで弱かったAIが明確に強くなりました。</p>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap">
+      <span>pokemon_ai / Input Scaling Ablation</span>
+      <span>Data: 5 seeds × 1,000 training battles</span>
+    </div>
+  </footer>
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.12.0/styles/default.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.12.0/highlight.min.js"></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.12.0/languages/rust.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.12.0/languages/typescript.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.12.0/languages/css.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.12.0/languages/json.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.12.0/languages/yaml.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.12.0/languages/bash.min.js"></script>
+
+  <script>hljs.highlightAll();</script>
+</body>
+</html>

@@ -1,0 +1,323 @@
+{
+  "experiment": "input-scaling-ablation",
+  "change": {
+    "species_id": "id / 135",
+    "hp": "max(0, actual_hp) / max_hp",
+    "move_id": "id / 9",
+    "unchanged": [
+      "84 input dimensions",
+      "scalar ID representation",
+      "10x10 MLP",
+      "opponent curriculum",
+      "reward",
+      "replay buffer",
+      "one update per battle",
+      "unmasked TD target"
+    ]
+  },
+  "episodes": 1000,
+  "evaluation_battles_per_opponent": 300,
+  "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "environment": {
+    "python": "3.10.20",
+    "numpy": "1.23.2",
+    "scikit_learn": "1.1.2"
+  },
+  "runs": [
+    {
+      "seed": 0,
+      "mode": "raw",
+      "evaluation": {
+        "random": {
+          "wins": 168,
+          "losses": 132,
+          "draws": 0,
+          "win_rate": 0.56
+        },
+        "attack": {
+          "wins": 7,
+          "losses": 293,
+          "draws": 0,
+          "win_rate": 0.023333333333333334
+        }
+      },
+      "diagnostics": {
+        "input_min": 0.0,
+        "input_max": 413.0,
+        "active_first_layer_units": 0,
+        "total_first_layer_units": 10,
+        "varying_q_outputs": 0,
+        "max_q_range_across_states": 0.0
+      },
+      "elapsed_seconds": 10.47072671900969
+    },
+    {
+      "seed": 0,
+      "mode": "scaled",
+      "evaluation": {
+        "random": {
+          "wins": 293,
+          "losses": 7,
+          "draws": 0,
+          "win_rate": 0.9766666666666667
+        },
+        "attack": {
+          "wins": 164,
+          "losses": 136,
+          "draws": 0,
+          "win_rate": 0.5466666666666666
+        }
+      },
+      "diagnostics": {
+        "input_min": 0.0,
+        "input_max": 1.0,
+        "active_first_layer_units": 3,
+        "total_first_layer_units": 10,
+        "varying_q_outputs": 10,
+        "max_q_range_across_states": 0.4974255850421341
+      },
+      "elapsed_seconds": 9.558227555011399
+    },
+    {
+      "seed": 1,
+      "mode": "raw",
+      "evaluation": {
+        "random": {
+          "wins": 8,
+          "losses": 292,
+          "draws": 0,
+          "win_rate": 0.02666666666666667
+        },
+        "attack": {
+          "wins": 1,
+          "losses": 299,
+          "draws": 0,
+          "win_rate": 0.0033333333333333335
+        }
+      },
+      "diagnostics": {
+        "input_min": 0.0,
+        "input_max": 413.0,
+        "active_first_layer_units": 5,
+        "total_first_layer_units": 10,
+        "varying_q_outputs": 10,
+        "max_q_range_across_states": 18.488149982623767
+      },
+      "elapsed_seconds": 11.537596945010591
+    },
+    {
+      "seed": 1,
+      "mode": "scaled",
+      "evaluation": {
+        "random": {
+          "wins": 296,
+          "losses": 4,
+          "draws": 0,
+          "win_rate": 0.9866666666666667
+        },
+        "attack": {
+          "wins": 232,
+          "losses": 68,
+          "draws": 0,
+          "win_rate": 0.7733333333333333
+        }
+      },
+      "diagnostics": {
+        "input_min": 0.0,
+        "input_max": 1.0,
+        "active_first_layer_units": 5,
+        "total_first_layer_units": 10,
+        "varying_q_outputs": 10,
+        "max_q_range_across_states": 0.4713499929201226
+      },
+      "elapsed_seconds": 9.119522705033887
+    },
+    {
+      "seed": 2,
+      "mode": "raw",
+      "evaluation": {
+        "random": {
+          "wins": 47,
+          "losses": 253,
+          "draws": 0,
+          "win_rate": 0.15666666666666668
+        },
+        "attack": {
+          "wins": 6,
+          "losses": 294,
+          "draws": 0,
+          "win_rate": 0.02
+        }
+      },
+      "diagnostics": {
+        "input_min": 0.0,
+        "input_max": 413.0,
+        "active_first_layer_units": 3,
+        "total_first_layer_units": 10,
+        "varying_q_outputs": 10,
+        "max_q_range_across_states": 2.230487300816021
+      },
+      "elapsed_seconds": 10.937943840981461
+    },
+    {
+      "seed": 2,
+      "mode": "scaled",
+      "evaluation": {
+        "random": {
+          "wins": 295,
+          "losses": 5,
+          "draws": 0,
+          "win_rate": 0.9833333333333333
+        },
+        "attack": {
+          "wins": 250,
+          "losses": 50,
+          "draws": 0,
+          "win_rate": 0.8333333333333334
+        }
+      },
+      "diagnostics": {
+        "input_min": 0.0,
+        "input_max": 1.0,
+        "active_first_layer_units": 3,
+        "total_first_layer_units": 10,
+        "varying_q_outputs": 10,
+        "max_q_range_across_states": 0.5055935971799445
+      },
+      "elapsed_seconds": 9.696547917963471
+    },
+    {
+      "seed": 3,
+      "mode": "raw",
+      "evaluation": {
+        "random": {
+          "wins": 71,
+          "losses": 229,
+          "draws": 0,
+          "win_rate": 0.23666666666666666
+        },
+        "attack": {
+          "wins": 27,
+          "losses": 273,
+          "draws": 0,
+          "win_rate": 0.09
+        }
+      },
+      "diagnostics": {
+        "input_min": 0.0,
+        "input_max": 413.0,
+        "active_first_layer_units": 5,
+        "total_first_layer_units": 10,
+        "varying_q_outputs": 10,
+        "max_q_range_across_states": 39.30718555671169
+      },
+      "elapsed_seconds": 11.180261903034989
+    },
+    {
+      "seed": 3,
+      "mode": "scaled",
+      "evaluation": {
+        "random": {
+          "wins": 231,
+          "losses": 69,
+          "draws": 0,
+          "win_rate": 0.77
+        },
+        "attack": {
+          "wins": 108,
+          "losses": 192,
+          "draws": 0,
+          "win_rate": 0.36
+        }
+      },
+      "diagnostics": {
+        "input_min": 0.0,
+        "input_max": 1.0,
+        "active_first_layer_units": 5,
+        "total_first_layer_units": 10,
+        "varying_q_outputs": 10,
+        "max_q_range_across_states": 0.5269543518277641
+      },
+      "elapsed_seconds": 9.705706700973678
+    },
+    {
+      "seed": 4,
+      "mode": "raw",
+      "evaluation": {
+        "random": {
+          "wins": 117,
+          "losses": 183,
+          "draws": 0,
+          "win_rate": 0.39
+        },
+        "attack": {
+          "wins": 33,
+          "losses": 267,
+          "draws": 0,
+          "win_rate": 0.11
+        }
+      },
+      "diagnostics": {
+        "input_min": 0.0,
+        "input_max": 413.0,
+        "active_first_layer_units": 8,
+        "total_first_layer_units": 10,
+        "varying_q_outputs": 10,
+        "max_q_range_across_states": 77.20747758284526
+      },
+      "elapsed_seconds": 10.878195544006303
+    },
+    {
+      "seed": 4,
+      "mode": "scaled",
+      "evaluation": {
+        "random": {
+          "wins": 296,
+          "losses": 4,
+          "draws": 0,
+          "win_rate": 0.9866666666666667
+        },
+        "attack": {
+          "wins": 222,
+          "losses": 78,
+          "draws": 0,
+          "win_rate": 0.74
+        }
+      },
+      "diagnostics": {
+        "input_min": 0.0,
+        "input_max": 1.0,
+        "active_first_layer_units": 7,
+        "total_first_layer_units": 10,
+        "varying_q_outputs": 10,
+        "max_q_range_across_states": 0.4829150249028334
+      },
+      "elapsed_seconds": 9.935175188991707
+    }
+  ],
+  "summary": {
+    "raw": {
+      "random_win_rate_mean": 0.274,
+      "random_win_rate_stdev": 0.2071151048732725,
+      "attack_win_rate_mean": 0.04933333333333333,
+      "attack_win_rate_stdev": 0.04739901546094251,
+      "active_first_layer_units_mean": 4.2,
+      "varying_q_outputs_mean": 8
+    },
+    "scaled": {
+      "random_win_rate_mean": 0.9406666666666667,
+      "random_win_rate_stdev": 0.09549287349791548,
+      "attack_win_rate_mean": 0.6506666666666666,
+      "attack_win_rate_stdev": 0.19474199455804198,
+      "active_first_layer_units_mean": 4.6,
+      "varying_q_outputs_mean": 10
+    }
+  },
+  "elapsed_seconds": 103.02052940503927
+}
