@@ -1,0 +1,476 @@
+{
+  "experiment": "categorical-encoding-ablation",
+  "encodings": {
+    "raw": "scalar species ID, raw HP, scalar move IDs",
+    "scaled": "scaled species ID, HP fraction, scaled move IDs",
+    "species_onehot": "one-hot species, HP fraction, scaled move IDs",
+    "onehot": "one-hot species, HP fraction, one-hot move per slot"
+  },
+  "observation_sizes": {
+    "raw": 84,
+    "scaled": 84,
+    "species_onehot": 108,
+    "onehot": 492
+  },
+  "unchanged": [
+    "10x10 hidden layers",
+    "opponent curriculum",
+    "reward",
+    "replay buffer",
+    "one update per battle",
+    "unmasked TD target"
+  ],
+  "modes": [
+    "scaled",
+    "species_onehot",
+    "onehot"
+  ],
+  "episodes": 1000,
+  "evaluation_battles_per_opponent": 300,
+  "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "environment": {
+    "python": "3.10.20",
+    "numpy": "1.23.2",
+    "scikit_learn": "1.1.2"
+  },
+  "runs": [
+    {
+      "seed": 0,
+      "mode": "scaled",
+      "evaluation": {
+        "random": {
+          "wins": 293,
+          "losses": 7,
+          "draws": 0,
+          "win_rate": 0.9766666666666667
+        },
+        "attack": {
+          "wins": 164,
+          "losses": 136,
+          "draws": 0,
+          "win_rate": 0.5466666666666666
+        }
+      },
+      "diagnostics": {
+        "input_min": 0.0,
+        "input_max": 1.0,
+        "active_first_layer_units": 3,
+        "total_first_layer_units": 10,
+        "varying_q_outputs": 10,
+        "max_q_range_across_states": 0.4974255850421341
+      },
+      "elapsed_seconds": 9.445897136989515
+    },
+    {
+      "seed": 0,
+      "mode": "species_onehot",
+      "evaluation": {
+        "random": {
+          "wins": 298,
+          "losses": 2,
+          "draws": 0,
+          "win_rate": 0.9933333333333333
+        },
+        "attack": {
+          "wins": 235,
+          "losses": 65,
+          "draws": 0,
+          "win_rate": 0.7833333333333333
+        }
+      },
+      "diagnostics": {
+        "input_min": 0.0,
+        "input_max": 1.0,
+        "active_first_layer_units": 2,
+        "total_first_layer_units": 10,
+        "varying_q_outputs": 10,
+        "max_q_range_across_states": 0.3209381519734597
+      },
+      "elapsed_seconds": 10.055123980040662
+    },
+    {
+      "seed": 0,
+      "mode": "onehot",
+      "evaluation": {
+        "random": {
+          "wins": 298,
+          "losses": 2,
+          "draws": 0,
+          "win_rate": 0.9933333333333333
+        },
+        "attack": {
+          "wins": 252,
+          "losses": 48,
+          "draws": 0,
+          "win_rate": 0.84
+        }
+      },
+      "diagnostics": {
+        "input_min": 0.0,
+        "input_max": 1.0,
+        "active_first_layer_units": 2,
+        "total_first_layer_units": 10,
+        "varying_q_outputs": 10,
+        "max_q_range_across_states": 0.45716019324003754
+      },
+      "elapsed_seconds": 24.092451363045257
+    },
+    {
+      "seed": 1,
+      "mode": "scaled",
+      "evaluation": {
+        "random": {
+          "wins": 296,
+          "losses": 4,
+          "draws": 0,
+          "win_rate": 0.9866666666666667
+        },
+        "attack": {
+          "wins": 232,
+          "losses": 68,
+          "draws": 0,
+          "win_rate": 0.7733333333333333
+        }
+      },
+      "diagnostics": {
+        "input_min": 0.0,
+        "input_max": 1.0,
+        "active_first_layer_units": 5,
+        "total_first_layer_units": 10,
+        "varying_q_outputs": 10,
+        "max_q_range_across_states": 0.4713499929201226
+      },
+      "elapsed_seconds": 9.282792736019474
+    },
+    {
+      "seed": 1,
+      "mode": "species_onehot",
+      "evaluation": {
+        "random": {
+          "wins": 294,
+          "losses": 6,
+          "draws": 0,
+          "win_rate": 0.98
+        },
+        "attack": {
+          "wins": 241,
+          "losses": 59,
+          "draws": 0,
+          "win_rate": 0.8033333333333333
+        }
+      },
+      "diagnostics": {
+        "input_min": 0.0,
+        "input_max": 1.0,
+        "active_first_layer_units": 3,
+        "total_first_layer_units": 10,
+        "varying_q_outputs": 10,
+        "max_q_range_across_states": 0.2831372372989561
+      },
+      "elapsed_seconds": 10.001565131999087
+    },
+    {
+      "seed": 1,
+      "mode": "onehot",
+      "evaluation": {
+        "random": {
+          "wins": 296,
+          "losses": 4,
+          "draws": 0,
+          "win_rate": 0.9866666666666667
+        },
+        "attack": {
+          "wins": 226,
+          "losses": 74,
+          "draws": 0,
+          "win_rate": 0.7533333333333333
+        }
+      },
+      "diagnostics": {
+        "input_min": 0.0,
+        "input_max": 1.0,
+        "active_first_layer_units": 3,
+        "total_first_layer_units": 10,
+        "varying_q_outputs": 10,
+        "max_q_range_across_states": 0.4172131516131305
+      },
+      "elapsed_seconds": 21.883951724041253
+    },
+    {
+      "seed": 2,
+      "mode": "scaled",
+      "evaluation": {
+        "random": {
+          "wins": 295,
+          "losses": 5,
+          "draws": 0,
+          "win_rate": 0.9833333333333333
+        },
+        "attack": {
+          "wins": 250,
+          "losses": 50,
+          "draws": 0,
+          "win_rate": 0.8333333333333334
+        }
+      },
+      "diagnostics": {
+        "input_min": 0.0,
+        "input_max": 1.0,
+        "active_first_layer_units": 3,
+        "total_first_layer_units": 10,
+        "varying_q_outputs": 10,
+        "max_q_range_across_states": 0.5055935971799445
+      },
+      "elapsed_seconds": 9.917877158964984
+    },
+    {
+      "seed": 2,
+      "mode": "species_onehot",
+      "evaluation": {
+        "random": {
+          "wins": 299,
+          "losses": 1,
+          "draws": 0,
+          "win_rate": 0.9966666666666667
+        },
+        "attack": {
+          "wins": 247,
+          "losses": 53,
+          "draws": 0,
+          "win_rate": 0.8233333333333334
+        }
+      },
+      "diagnostics": {
+        "input_min": 0.0,
+        "input_max": 1.0,
+        "active_first_layer_units": 1,
+        "total_first_layer_units": 10,
+        "varying_q_outputs": 10,
+        "max_q_range_across_states": 0.27898552357536127
+      },
+      "elapsed_seconds": 9.241964047017973
+    },
+    {
+      "seed": 2,
+      "mode": "onehot",
+      "evaluation": {
+        "random": {
+          "wins": 298,
+          "losses": 2,
+          "draws": 0,
+          "win_rate": 0.9933333333333333
+        },
+        "attack": {
+          "wins": 239,
+          "losses": 61,
+          "draws": 0,
+          "win_rate": 0.7966666666666666
+        }
+      },
+      "diagnostics": {
+        "input_min": 0.0,
+        "input_max": 1.0,
+        "active_first_layer_units": 5,
+        "total_first_layer_units": 10,
+        "varying_q_outputs": 10,
+        "max_q_range_across_states": 0.3732266239941866
+      },
+      "elapsed_seconds": 22.51318289100891
+    },
+    {
+      "seed": 3,
+      "mode": "scaled",
+      "evaluation": {
+        "random": {
+          "wins": 231,
+          "losses": 69,
+          "draws": 0,
+          "win_rate": 0.77
+        },
+        "attack": {
+          "wins": 108,
+          "losses": 192,
+          "draws": 0,
+          "win_rate": 0.36
+        }
+      },
+      "diagnostics": {
+        "input_min": 0.0,
+        "input_max": 1.0,
+        "active_first_layer_units": 5,
+        "total_first_layer_units": 10,
+        "varying_q_outputs": 10,
+        "max_q_range_across_states": 0.5269543518277641
+      },
+      "elapsed_seconds": 9.930403403996024
+    },
+    {
+      "seed": 3,
+      "mode": "species_onehot",
+      "evaluation": {
+        "random": {
+          "wins": 297,
+          "losses": 3,
+          "draws": 0,
+          "win_rate": 0.99
+        },
+        "attack": {
+          "wins": 239,
+          "losses": 61,
+          "draws": 0,
+          "win_rate": 0.7966666666666666
+        }
+      },
+      "diagnostics": {
+        "input_min": 0.0,
+        "input_max": 1.0,
+        "active_first_layer_units": 3,
+        "total_first_layer_units": 10,
+        "varying_q_outputs": 10,
+        "max_q_range_across_states": 0.15466749651540712
+      },
+      "elapsed_seconds": 9.304482364968862
+    },
+    {
+      "seed": 3,
+      "mode": "onehot",
+      "evaluation": {
+        "random": {
+          "wins": 270,
+          "losses": 30,
+          "draws": 0,
+          "win_rate": 0.9
+        },
+        "attack": {
+          "wins": 211,
+          "losses": 89,
+          "draws": 0,
+          "win_rate": 0.7033333333333334
+        }
+      },
+      "diagnostics": {
+        "input_min": 0.0,
+        "input_max": 1.0,
+        "active_first_layer_units": 3,
+        "total_first_layer_units": 10,
+        "varying_q_outputs": 10,
+        "max_q_range_across_states": 0.41022578171072327
+      },
+      "elapsed_seconds": 24.521946264023427
+    },
+    {
+      "seed": 4,
+      "mode": "scaled",
+      "evaluation": {
+        "random": {
+          "wins": 296,
+          "losses": 4,
+          "draws": 0,
+          "win_rate": 0.9866666666666667
+        },
+        "attack": {
+          "wins": 222,
+          "losses": 78,
+          "draws": 0,
+          "win_rate": 0.74
+        }
+      },
+      "diagnostics": {
+        "input_min": 0.0,
+        "input_max": 1.0,
+        "active_first_layer_units": 7,
+        "total_first_layer_units": 10,
+        "varying_q_outputs": 10,
+        "max_q_range_across_states": 0.4829150249028334
+      },
+      "elapsed_seconds": 10.113508415000979
+    },
+    {
+      "seed": 4,
+      "mode": "species_onehot",
+      "evaluation": {
+        "random": {
+          "wins": 297,
+          "losses": 3,
+          "draws": 0,
+          "win_rate": 0.99
+        },
+        "attack": {
+          "wins": 243,
+          "losses": 57,
+          "draws": 0,
+          "win_rate": 0.81
+        }
+      },
+      "diagnostics": {
+        "input_min": 0.0,
+        "input_max": 1.0,
+        "active_first_layer_units": 5,
+        "total_first_layer_units": 10,
+        "varying_q_outputs": 10,
+        "max_q_range_across_states": 0.35030979300275167
+      },
+      "elapsed_seconds": 10.319891746039502
+    },
+    {
+      "seed": 4,
+      "mode": "onehot",
+      "evaluation": {
+        "random": {
+          "wins": 291,
+          "losses": 9,
+          "draws": 0,
+          "win_rate": 0.97
+        },
+        "attack": {
+          "wins": 226,
+          "losses": 74,
+          "draws": 0,
+          "win_rate": 0.7533333333333333
+        }
+      },
+      "diagnostics": {
+        "input_min": 0.0,
+        "input_max": 1.0,
+        "active_first_layer_units": 6,
+        "total_first_layer_units": 10,
+        "varying_q_outputs": 10,
+        "max_q_range_across_states": 0.37395820480961944
+      },
+      "elapsed_seconds": 24.755922428972553
+    }
+  ],
+  "summary": {
+    "scaled": {
+      "random_win_rate_mean": 0.9406666666666667,
+      "random_win_rate_stdev": 0.09549287349791548,
+      "attack_win_rate_mean": 0.6506666666666666,
+      "attack_win_rate_stdev": 0.19474199455804198,
+      "active_first_layer_units_mean": 4.6,
+      "varying_q_outputs_mean": 10
+    },
+    "species_onehot": {
+      "random_win_rate_mean": 0.99,
+      "random_win_rate_stdev": 0.006236095644623246,
+      "attack_win_rate_mean": 0.8033333333333333,
+      "attack_win_rate_stdev": 0.01490711984999862,
+      "active_first_layer_units_mean": 2.8,
+      "varying_q_outputs_mean": 10
+    },
+    "onehot": {
+      "random_win_rate_mean": 0.9686666666666667,
+      "random_win_rate_stdev": 0.03955305859784351,
+      "attack_win_rate_mean": 0.7693333333333333,
+      "attack_win_rate_stdev": 0.05149973031213096,
+      "active_first_layer_units_mean": 3.8,
+      "varying_q_outputs_mean": 10
+    }
+  },
+  "elapsed_seconds": 215.38187656801892
+}
